@@ -58,8 +58,8 @@ vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnos
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Open floating diagnostic message" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
 
--- Clear search highlights with double Esc
-vim.keymap.set("n", "<Esc><Esc>", ":nohlsearch<CR>")
+-- Clear search highlight with <leader>l
+vim.keymap.set("n", "<leader>l", ":nohlsearch<CR>", { desc = "Clear search highlight" })
 
 -- Don't yank on delete (use leader + d)
 vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')

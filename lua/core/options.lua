@@ -26,6 +26,9 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
 })
 
+-- Automatically reload file if changed by another program
+vim.o.autoread = true
+
 -- Save undo history
 vim.o.undofile = true
 
