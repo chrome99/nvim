@@ -1,0 +1,37 @@
+require'nvim-treesitter.configs'.setup {
+  -- A list of parser names, or "all" (the listed parsers MUST always be installed)
+  ensure_installed = {
+      'astro',
+      'python',
+      'lua',
+      'javascript',
+      'typescript',
+      'vimdoc',
+      'vim',
+      'regex',
+      'terraform',
+      'sql',
+      'dockerfile',
+      'toml',
+      'json',
+      'go',
+      'gitignore',
+      'yaml',
+      'make',
+      'cmake',
+      'markdown',
+      'markdown_inline',
+      'bash',
+      'tsx',
+      'css',
+      'html',
+  },
+  auto_install = true,
+  ignore_install = { "javascript" },
+  highlight = {
+    enable = true,
+    -- list of language that will be disabled
+    disable = { "c", "rust" },
+    additional_vim_regex_highlighting = false,
+  },
+}
