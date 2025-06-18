@@ -25,3 +25,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     vim.highlight.on_yank({ higroup = "IncSearch", timeout = 200 })
   end,
 })
+
+-- Save undo history
+vim.o.undofile = true
+
+-- Don't create annoying swap files
+vim.o.swapfile = false
+
+-- Scroll margin
+vim.o.scrolloff = 5
+
+-- Case insensitive search
+vim.o.ignorecase = true

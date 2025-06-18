@@ -14,10 +14,6 @@ vim.keymap.set("n", "<C-s>", "<cmd> w <CR>", opts)
 -- Quit file
 vim.keymap.set("n", "<C-q>", "<cmd> q <CR>", opts)
 
--- Vertical scroll and center
--- vim.keymap.set("n", "<C-d>", "<C-d>zz", opts)
--- vim.keymap.set("n", "<C-u>", "<C-u>zz", opts)
-
 -- Find and center
 vim.keymap.set("n", "n", "nzzzv", opts)
 vim.keymap.set("n", "N", "Nzzzv", opts)
@@ -52,18 +48,25 @@ vim.keymap.set("n", "<leader>tx", ":tabclose<CR>", opts) -- close current tab
 vim.keymap.set("n", "<leader>tn", ":tabn<CR>", opts) --  go to next tab
 vim.keymap.set("n", "<leader>tp", ":tabp<CR>", opts) --  go to previous tab
 
--- Toggle line wrapping
--- vim.keymap.set('n', '<leader>lw', '<cmd>set wrap!<CR>', opts)
-
 -- Stay in indent mode
 vim.keymap.set("v", "<", "<gv", opts)
 vim.keymap.set("v", ">", ">gv", opts)
-
--- Keep last yanked when pasting
--- vim.keymap.set('v', 'p', '"_dP', opts)
 
 -- Diagnostic keymaps
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic message" })
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostic message" })
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Open floating diagnostic message" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
+
+-- Clear search highlights with double Esc
+vim.keymap.set("n", "<Esc><Esc>", ":nohlsearch<CR>")
+
+-- Don't yank on delete (use leader + d)
+vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')
+
+-- Select all text in buffer
+vim.keymap.set("n", "<C-a>", "ggVG")
+
+-- Move to start/end of line easier
+vim.keymap.set("n", "H", "^")
+vim.keymap.set("n", "L", "g_")
