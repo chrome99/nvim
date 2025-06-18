@@ -178,21 +178,6 @@ return require("packer").startup(function(use)
   use({ "vim-denops/denops.vim" })
   use({ "kbwo/vim-shareedit" })
 
-  -- Aider
-  use({
-    "GeorgesAlkhouri/nvim-aider",
-    cmd = "Aider",
-    requires = {
-      "folke/snacks.nvim",
-      {
-        "nvim-neo-tree/neo-tree.nvim",
-        config = function(_, opts)
-          require("nvim_aider.neo_tree").setup(opts)
-        end,
-      },
-    },
-  })
-
   -- Buffer line
   use({
     "akinsho/bufferline.nvim",
