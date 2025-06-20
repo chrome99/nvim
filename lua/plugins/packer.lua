@@ -174,6 +174,15 @@ return require("packer").startup(function(use)
   -- Markdown Rendering
   use({ "MeanderingProgrammer/render-markdown.nvim" })
 
+  -- Markdown Preview
+  use({
+    "iamcco/markdown-preview.nvim",
+    run = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    ft = { "markdown" },
+  })
+
   -- Share Buffers with Cursor
   use({ "vim-denops/denops.vim" })
   use({ "kbwo/vim-shareedit" })
