@@ -36,12 +36,12 @@ function M.toggle_git_log()
 
   vim.api.nvim_win_set_option(git_log_win, "winhl", "FloatBorder:GitLogBorder,FloatTitle:GitLogTitle")
 
-  vim.fn.termopen("git --no-pager l --color=always", {
-    buffer = git_log_buf,
-    on_exit = function()
-      vim.cmd("stopinsert")
-    end,
-  })
+  vim.fn.termopen(
+    "git log --pretty=format:'%C(blue)%d%Creset %C(auto)%s%Creset %Cgreen(%cr)%Creset' --abbrev-commit --date=relative",
+    {
+      buffer = git_log_buf,
+    }
+  )
   vim.cmd("startinsert")
 
   vim.api.nvim_buf_set_keymap(git_log_buf, "t", "q", "<C-\\><C-n><cmd>close<cr>", { noremap = true, silent = true })
