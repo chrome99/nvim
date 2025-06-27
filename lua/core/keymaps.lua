@@ -21,8 +21,11 @@ vim.keymap.set("n", "N", "Nzzzv", opts)
 -- Buffers
 vim.keymap.set("n", "<Tab>", ":bnext<CR>", opts)
 vim.keymap.set("n", "<S-Tab>", ":bprevious<CR>", opts)
-vim.keymap.set("n", "<leader>x", ":bd<CR>", opts) -- close buffer
-vim.keymap.set("n", "<leader>b", "<cmd> enew <CR>", opts) -- new buffer
+vim.keymap.set("n", "<leader>bd", ":BufDel<CR>", { desc = "[B]uffer [D]elete" })
+vim.keymap.set("n", "<leader>bn", "<cmd>enew<CR>", { desc = "[B]uffer [N]ew" })
+-- vim.keymap.set("n", "<leader>bp", ":BufferLinePick<CR>", { desc = "[B]uffer [P]ick" })
+vim.keymap.set("n", "<leader>j", ":BufferLinePick<CR>", { desc = "Jump Buffers" })
+vim.keymap.set("n", "<leader>bD", ":BufDelOther<CR>", { desc = "[B]uffer [D]elete all others" })
 
 -- Resize with arrows
 vim.keymap.set("n", "<Up>", ":resize -2<CR>", opts)

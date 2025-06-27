@@ -80,6 +80,9 @@ return require("packer").startup(function(use)
   -- Keybind hints
   use({ "folke/which-key.nvim" })
 
+  -- Quick buffer deletion
+  use({ "ojroques/nvim-bufdel" })
+
   -- Auto-pairs (e.g. brackets, quotes)
   use({
     "windwp/nvim-autopairs",

@@ -1,17 +1,17 @@
 local builtin = require("telescope.builtin")
 require("telescope").setup({
-	pickers = {
-		find_files = {
-			file_ignore_patterns = { "node_modules", ".git", ".venv" },
-			hidden = true,
-		},
-		live_grep = {
-			file_ignore_patterns = { "node_modules", ".git", ".venv" },
-			additional_args = function(_)
-				return { "--hidden" }
-			end,
-		},
-	},
+  pickers = {
+    find_files = {
+      file_ignore_patterns = { "node_modules", ".git", ".venv" },
+      hidden = true,
+    },
+    live_grep = {
+      file_ignore_patterns = { "node_modules", ".git", ".venv" },
+      additional_args = function(_)
+        return { "--hidden" }
+      end,
+    },
+  },
 })
 
 vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "[S]earch [H]elp" })
@@ -24,4 +24,4 @@ vim.keymap.set("n", "<leader>sg", builtin.live_grep, { desc = "[S]earch by [G]re
 vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
 vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "[S]earch [R]esume" })
 vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = "[S]earch [.]Recent Files" })
-vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
+vim.keymap.set("n", "<leader>sb", builtin.buffers, { desc = "[S]earch [B]uffers" })
