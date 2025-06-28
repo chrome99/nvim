@@ -3,6 +3,7 @@ local state = {
     buf = -1,
     win = -1,
   },
+  help_win = -1,
 }
 
 -- Create persistent todo file path
@@ -41,6 +42,8 @@ local function create_floating_window(opts)
   vim.api.nvim_win_set_option(win, "winhl", "FloatBorder:TodoBorder,FloatTitle:TodoTitle")
   vim.api.nvim_win_set_option(win, "conceallevel", 2)
   vim.api.nvim_win_set_option(win, "concealcursor", "niv")
+  vim.api.nvim_win_set_option(win, "number", true)
+  vim.api.nvim_win_set_option(win, "relativenumber", true)
 
   return { buf = buf, win = win }
 end
@@ -108,6 +111,10 @@ local function setup_todo_keymaps(buf)
 
   vim.keymap.set("n", "q", function()
     save_todo_file(buf)
+    if vim.api.nvim_win_is_valid(state.help_win) then
+      vim.api.nvim_win_close(state.help_win, true)
+      state.help_win = -1
+    end
     vim.api.nvim_win_hide(state.floating.win)
   end, vim.tbl_extend("force", opts, { desc = "Close todo window" }))
 
@@ -124,6 +131,49 @@ local function setup_todo_keymaps(buf)
     vim.api.nvim_win_set_cursor(0, { row + 1, 6 })
     vim.cmd("startinsert!")
   end, vim.tbl_extend("force", opts, { desc = "Add new todo below" }))
+
+  vim.keymap.set("n", "?", function()
+    if vim.api.nvim_win_is_valid(state.help_win) then
+      vim.api.nvim_win_close(state.help_win, true)
+      state.help_win = -1
+    else
+      local help_buf = vim.api.nvim_create_buf(false, true)
+      local help_content = {
+        "Keymaps:",
+        "o - Add new todo below",
+        "<Enter> - Toggle checkbox",
+        "<Ctrl-s> - Save todo",
+        "q - Close todo",
+        "? - Toggle this help",
+      }
+      vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
+
+      local help_width = 25
+      local help_height = 6
+      local help_row = math.floor((vim.o.lines - help_height) / 2)
+      local help_col = math.floor((vim.o.columns - help_width) / 2)
+
+      state.help_win = vim.api.nvim_open_win(help_buf, true, {
+        relative = "editor",
+        width = help_width,
+        height = help_height,
+        row = help_row,
+        col = help_col,
+        style = "minimal",
+        border = "single",
+        zindex = 200,
+      })
+
+      vim.api.nvim_win_set_option(state.help_win, "winhl", "FloatBorder:TodoBorder")
+
+      vim.keymap.set("n", "?", function()
+        if vim.api.nvim_win_is_valid(state.help_win) then
+          vim.api.nvim_win_close(state.help_win, true)
+          state.help_win = -1
+        end
+      end, { buffer = help_buf, silent = true })
+    end
+  end, vim.tbl_extend("force", opts, { desc = "Toggle help" }))
 end
 
 local function toggle_todo()
@@ -136,6 +186,10 @@ local function toggle_todo()
       buffer = state.floating.buf,
       callback = function()
         save_todo_file(state.floating.buf)
+        if vim.api.nvim_win_is_valid(state.help_win) then
+          vim.api.nvim_win_close(state.help_win, true)
+          state.help_win = -1
+        end
       end,
     })
 
@@ -147,6 +201,10 @@ local function toggle_todo()
     })
   else
     save_todo_file(state.floating.buf)
+    if vim.api.nvim_win_is_valid(state.help_win) then
+      vim.api.nvim_win_close(state.help_win, true)
+      state.help_win = -1
+    end
     vim.api.nvim_win_hide(state.floating.win)
   end
 end
