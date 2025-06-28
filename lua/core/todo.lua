@@ -106,6 +106,40 @@ local function toggle_checkbox()
   end
 end
 
+local function toggle_checkbox_range()
+  local start_row, end_row
+
+  local mode = vim.api.nvim_get_mode().mode
+  if mode == "V" or mode == "v" then
+    local start_pos = vim.fn.getpos("v")
+    local end_pos = vim.fn.getpos(".")
+    start_row = math.min(start_pos[2], end_pos[2])
+    end_row = math.max(start_pos[2], end_pos[2])
+  else
+    start_row = vim.api.nvim_win_get_cursor(0)[1]
+    end_row = start_row
+  end
+
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+
+  for row = start_row, end_row do
+    local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+    local modified_line
+
+    if line:match("^%s*-%s%[%s%]") then
+      modified_line = line:gsub("^(%s*-%s)%[%s%](.*)$", "%1[x]%2")
+    elseif line:match("^%s*-%s%[x%]") then
+      modified_line = line:gsub("^(%s*-%s)%[x%](.*)$", "%1[ ]%2")
+    else
+      modified_line = line
+    end
+
+    if modified_line ~= line then
+      vim.api.nvim_buf_set_lines(0, row - 1, row, false, { modified_line })
+    end
+  end
+end
+
 local function setup_todo_keymaps(buf)
   local opts = { buffer = buf, silent = true }
 
@@ -119,6 +153,12 @@ local function setup_todo_keymaps(buf)
   end, vim.tbl_extend("force", opts, { desc = "Close todo window" }))
 
   vim.keymap.set("n", "<cr>", toggle_checkbox, vim.tbl_extend("force", opts, { desc = "Toggle todo checkbox" }))
+  vim.keymap.set(
+    "v",
+    "<cr>",
+    toggle_checkbox_range,
+    vim.tbl_extend("force", opts, { desc = "Toggle multiple todo checkboxes" })
+  )
 
   vim.keymap.set("n", "<C-s>", function()
     save_todo_file(buf)
@@ -142,14 +182,15 @@ local function setup_todo_keymaps(buf)
         "Keymaps:",
         "o - Add new todo below",
         "<Enter> - Toggle checkbox",
+        "V + <Enter> - Toggle multiple todos",
         "<Ctrl-s> - Save todo",
         "q - Close todo",
         "? - Toggle this help",
       }
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
-      local help_width = 25
-      local help_height = 6
+      local help_width = 38
+      local help_height = 7
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
