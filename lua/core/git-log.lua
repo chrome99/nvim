@@ -4,6 +4,8 @@ local state = {
   win = nil,
   buf = nil,
   commits = {},
+  preview_win = nil,
+  preview_buf = nil,
 }
 
 local config = {
@@ -24,6 +26,7 @@ local config = {
     close = { "q", "<Esc>" },
     yank_message = "ym",
     yank_hash = "yh",
+    preview = "<CR>",
   },
   git_command = "git log --pretty=format:'%h|%d|%s|%cr' --abbrev-commit --date=relative",
 }
@@ -54,6 +57,86 @@ local function yank(what)
   vim.notify("󰅍 Yanked " .. what .. ": " .. content, vim.log.levels.INFO, { timeout = 2000 })
 end
 
+local function show_commit_preview()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  local commit = state.commits[lnum]
+  if not commit then
+    return
+  end
+
+  if state.preview_win and vim.api.nvim_win_is_valid(state.preview_win) then
+    vim.api.nvim_win_close(state.preview_win, true)
+    state.preview_win = nil
+  end
+
+  local git_show_cmd = "git show " .. commit.hash
+  local output = vim.fn.systemlist(git_show_cmd)
+
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Failed to get commit details", vim.log.levels.ERROR)
+    return
+  end
+
+  local width = math.floor(vim.o.columns * 0.8)
+  local height = math.floor(vim.o.lines * 0.8)
+  local row = math.floor((vim.o.lines - height) / 2)
+  local col = math.floor((vim.o.columns - width) / 2)
+
+  state.preview_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(state.preview_buf, "bufhidden", "hide")
+  vim.api.nvim_buf_set_option(state.preview_buf, "buftype", "nofile")
+  vim.api.nvim_buf_set_option(state.preview_buf, "filetype", "diff")
+
+  vim.api.nvim_buf_set_lines(state.preview_buf, 0, -1, false, output)
+  vim.api.nvim_buf_set_option(state.preview_buf, "modifiable", false)
+
+  -- Apply syntax highlighting for commit header
+  local ns = vim.api.nvim_create_namespace("git_show_preview")
+  vim.api.nvim_set_hl(0, "GitShowCommit", { fg = "#eed49f" })
+  vim.api.nvim_set_hl(0, "GitShowAuthor", { fg = "#8aadf4" })
+  vim.api.nvim_set_hl(0, "GitShowDate", { fg = "#8bd5ca" })
+
+  for i, line in ipairs(output) do
+    if line:match("^commit ") then
+      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowCommit", i - 1, 0, -1)
+    elseif line:match("^Author: ") then
+      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowAuthor", i - 1, 0, -1)
+    elseif line:match("^Date: ") then
+      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowDate", i - 1, 0, -1)
+    end
+  end
+
+  state.preview_win = vim.api.nvim_open_win(state.preview_buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    row = row,
+    col = col,
+    style = "minimal",
+    border = config.window.border,
+    title = " 󰊢 Commit " .. commit.hash .. " ",
+    title_pos = "center",
+  })
+
+  vim.api.nvim_win_set_option(state.preview_win, "winhl", "FloatBorder:GitLogBorder,FloatTitle:GitLogTitle")
+  vim.api.nvim_win_set_option(state.preview_win, "relativenumber", true)
+  vim.api.nvim_win_set_option(state.preview_win, "number", true)
+
+  vim.keymap.set("n", "q", function()
+    if state.preview_win and vim.api.nvim_win_is_valid(state.preview_win) then
+      vim.api.nvim_win_close(state.preview_win, true)
+      state.preview_win = nil
+    end
+  end, { buffer = state.preview_buf, silent = true })
+
+  vim.keymap.set("n", "<Esc>", function()
+    if state.preview_win and vim.api.nvim_win_is_valid(state.preview_win) then
+      vim.api.nvim_win_close(state.preview_win, true)
+      state.preview_win = nil
+    end
+  end, { buffer = state.preview_buf, silent = true })
+end
+
 local function setup_keymaps()
   local map = function(keys, func, desc)
     if type(keys) == "table" then
@@ -72,6 +155,7 @@ local function setup_keymaps()
   map(config.keymaps.yank_hash, function()
     yank("hash")
   end, "Yank commit hash")
+  map(config.keymaps.preview, show_commit_preview, "Show commit preview")
 end
 
 local function fetch_and_display_log()
