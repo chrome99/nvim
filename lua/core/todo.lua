@@ -44,6 +44,7 @@ local function create_floating_window(opts)
   vim.api.nvim_win_set_option(win, "concealcursor", "niv")
   vim.api.nvim_win_set_option(win, "number", true)
   vim.api.nvim_win_set_option(win, "relativenumber", true)
+  vim.api.nvim_win_set_option(win, "wrap", true)
 
   return { buf = buf, win = win }
 end
