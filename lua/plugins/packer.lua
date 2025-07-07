@@ -186,6 +186,9 @@ return require("packer").startup(function(use)
     ft = { "markdown" },
   })
 
+  -- Markdown Folding
+  use({ "preservim/vim-markdown", requires = { "godlygeek/tabular" } })
+
   -- Share Buffers with Cursor
   use({ "vim-denops/denops.vim" })
   use({ "kbwo/vim-shareedit" })
