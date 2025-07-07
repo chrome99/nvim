@@ -150,7 +150,7 @@ end
 local function setup_todo_keymaps(buf)
   local opts = { buffer = buf, silent = true }
 
-  vim.keymap.set("n", "q", function()
+  vim.keymap.set("n", "<C-q>", function()
     save_todo_file(buf)
     if vim.api.nvim_win_is_valid(state.help_win) then
       vim.api.nvim_win_close(state.help_win, true)
@@ -182,6 +182,24 @@ local function setup_todo_keymaps(buf)
     vim.cmd("startinsert!")
   end, vim.tbl_extend("force", opts, { desc = "Add new todo below" }))
 
+  vim.keymap.set("n", "gf", function()
+    local filename = vim.fn.expand('<cfile>')
+    
+    if filename == "" then
+      vim.notify("No file name under cursor", vim.log.levels.WARN)
+      return
+    end
+    
+    save_todo_file(buf)
+    if vim.api.nvim_win_is_valid(state.help_win) then
+      vim.api.nvim_win_close(state.help_win, true)
+      state.help_win = -1
+    end
+    vim.api.nvim_win_hide(state.floating.win)
+    
+    vim.cmd("edit " .. vim.fn.fnameescape(filename))
+  end, vim.tbl_extend("force", opts, { desc = "Close todo and go to file" }))
+
   vim.keymap.set("n", "?", function()
     if vim.api.nvim_win_is_valid(state.help_win) then
       vim.api.nvim_win_close(state.help_win, true)
@@ -194,13 +212,14 @@ local function setup_todo_keymaps(buf)
         "<Enter> - Toggle checkbox",
         "V + <Enter> - Toggle multiple todos",
         "<Ctrl-s> - Save todo",
-        "q - Close todo",
+        "<Ctrl-q> - Close todo",
+        "gf - Close todo and go to file",
         "? - Toggle this help",
       }
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 7
+      local help_height = 8
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
