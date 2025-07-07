@@ -182,23 +182,65 @@ local function setup_todo_keymaps(buf)
     vim.cmd("startinsert!")
   end, vim.tbl_extend("force", opts, { desc = "Add new todo below" }))
 
-  vim.keymap.set("n", "gf", function()
-    local filename = vim.fn.expand('<cfile>')
-    
+  local function go_to_file(split_cmd)
+    -- Get the current line and cursor position
+    local line = vim.api.nvim_get_current_line()
+    local col = vim.api.nvim_win_get_cursor(0)[2]
+
+    -- Find the word under cursor that might contain file:line format
+    local start_pos = col
+    local end_pos = col
+
+    -- Find start of word (go back until we hit whitespace or start of line)
+    while start_pos > 0 and line:sub(start_pos, start_pos):match("[%S]") do
+      start_pos = start_pos - 1
+    end
+    start_pos = start_pos + 1
+
+    -- Find end of word (go forward until we hit whitespace or end of line)
+    while end_pos < #line and line:sub(end_pos + 1, end_pos + 1):match("[%S]") do
+      end_pos = end_pos + 1
+    end
+
+    local filename = line:sub(start_pos, end_pos)
+
     if filename == "" then
       vim.notify("No file name under cursor", vim.log.levels.WARN)
       return
     end
-    
+
+    -- Parse file:line or file:line:col format
+    local file_part, line_part, col_part = filename:match("^(.+):(%d+):?(%d*)$")
+    if not file_part then
+      file_part = filename
+      line_part = nil
+      col_part = nil
+    end
+
     save_todo_file(buf)
     if vim.api.nvim_win_is_valid(state.help_win) then
       vim.api.nvim_win_close(state.help_win, true)
       state.help_win = -1
     end
     vim.api.nvim_win_hide(state.floating.win)
-    
-    vim.cmd("edit " .. vim.fn.fnameescape(filename))
+
+    vim.cmd(split_cmd .. " " .. vim.fn.fnameescape(file_part))
+
+    -- Jump to line and column if specified
+    if line_part then
+      local line_num = tonumber(line_part)
+      local col_num = col_part and tonumber(col_part) or 1
+      vim.api.nvim_win_set_cursor(0, { line_num, col_num - 1 })
+    end
+  end
+
+  vim.keymap.set("n", "gf", function()
+    go_to_file("edit")
   end, vim.tbl_extend("force", opts, { desc = "Close todo and go to file" }))
+
+  vim.keymap.set("n", "gF", function()
+    go_to_file("tabedit")
+  end, vim.tbl_extend("force", opts, { desc = "Close todo and go to file in new tab" }))
 
   vim.keymap.set("n", "?", function()
     if vim.api.nvim_win_is_valid(state.help_win) then
@@ -214,12 +256,13 @@ local function setup_todo_keymaps(buf)
         "<Ctrl-s> - Save todo",
         "<Ctrl-q> - Close todo",
         "gf - Close todo and go to file",
+        "gF - Close todo and go to file in new tab",
         "? - Toggle this help",
       }
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 8
+      local help_height = 9
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
@@ -281,3 +324,21 @@ end
 
 vim.api.nvim_create_user_command("Todo", toggle_todo, {})
 vim.keymap.set("n", "<space>td", toggle_todo, { desc = "Toggle todo window" })
+
+-- Yank current file path with line number
+vim.keymap.set("n", "<leader>yf", function()
+  local file_path = vim.fn.expand("%")
+  local line_num = vim.api.nvim_win_get_cursor(0)[1]
+  local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+
+  local result
+  if git_root and git_root ~= "" then
+    local relative_path = vim.fn.fnamemodify(file_path, ":p"):gsub("^" .. git_root .. "/", "")
+    result = relative_path .. ":" .. line_num
+  else
+    result = vim.fn.fnamemodify(file_path, ":p") .. ":" .. line_num
+  end
+
+  vim.fn.setreg("+", result)
+  vim.notify("Yanked: " .. result)
+end, { desc = "Yank file path with line number" })
