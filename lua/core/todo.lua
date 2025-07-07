@@ -46,6 +46,12 @@ local function create_floating_window(opts)
   vim.api.nvim_win_set_option(win, "relativenumber", true)
   vim.api.nvim_win_set_option(win, "wrap", true)
 
+  -- Set indent to 2 spaces for this buffer
+  vim.api.nvim_buf_set_option(buf, "shiftwidth", 2)
+  vim.api.nvim_buf_set_option(buf, "tabstop", 2)
+  vim.api.nvim_buf_set_option(buf, "softtabstop", 2)
+  vim.api.nvim_buf_set_option(buf, "expandtab", true)
+
   return { buf = buf, win = win }
 end
 
@@ -168,8 +174,11 @@ local function setup_todo_keymaps(buf)
 
   vim.keymap.set("n", "o", function()
     local row = vim.api.nvim_win_get_cursor(0)[1]
-    vim.api.nvim_buf_set_lines(buf, row, row, false, { "- [ ] " })
-    vim.api.nvim_win_set_cursor(0, { row + 1, 6 })
+    local current_line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1] or ""
+    local indent = current_line:match("^(%s*)")
+    local new_line = indent .. "- [ ] "
+    vim.api.nvim_buf_set_lines(buf, row, row, false, { new_line })
+    vim.api.nvim_win_set_cursor(0, { row + 1, #new_line + 1 })
     vim.cmd("startinsert!")
   end, vim.tbl_extend("force", opts, { desc = "Add new todo below" }))
 
