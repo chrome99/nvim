@@ -99,6 +99,7 @@ local function setup_lsp()
 		dockerls = {},
 		sqlls = {},
 		terraformls = {},
+		svelte = {},
 		lua_ls = {
 			settings = {
 				Lua = {
@@ -136,6 +137,7 @@ local function setup_lsp()
 		dockerls = "dockerfile-language-server",
 		sqlls = "sqls",
 		terraformls = "terraform-ls",
+		svelte = "svelte-language-server",
 		lua_ls = "lua-language-server",
 	}
 
