@@ -59,3 +59,4 @@ require("claude-code").setup({
 })
 
 vim.keymap.set("n", "<leader>at", "<cmd>ClaudeCode<CR>", { desc = "Toggle Claude Code" })
+vim.keymap.set("t", "<C-q>", "<cmd>ClaudeCode<CR>", { desc = "Close Claude Code" })
