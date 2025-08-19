@@ -78,3 +78,6 @@ vim.keymap.set("n", "L", "g_")
 vim.keymap.set("n", "<leader>l", function()
   require("core.git-log").toggle_git_log()
 end, { desc = "Toggle git log in floating window" })
+
+-- Focus floating window
+vim.keymap.set("n", "<leader>ff", "<C-w>w", { desc = "Cycle to next window" })
