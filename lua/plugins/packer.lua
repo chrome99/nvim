@@ -92,6 +92,9 @@ return require("packer").startup(function(use)
     end,
   })
 
+  -- Search and Replace
+  use({ "nvim-pack/nvim-spectre", requires = { "nvim-lua/plenary.nvim" } })
+
   -- Color highlighter
   use({
     "norcalli/nvim-colorizer.lua",
