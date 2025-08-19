@@ -35,7 +35,10 @@ null_ls.setup({
 				group = augroup,
 				buffer = bufnr,
 				callback = function()
-					vim.lsp.buf.format({ async = false })
+					local filetype = vim.bo[bufnr].filetype
+					if filetype ~= "python" then
+						vim.lsp.buf.format({ async = false })
+					end
 				end,
 			})
 		end
