@@ -1,5 +1,6 @@
 require("core.options")
 require("core.keymaps")
+require("core.functions")
 require("core.term")
 require("core.todo")
 require("plugins.packer")
