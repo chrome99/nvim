@@ -67,9 +67,6 @@ vim.keymap.set("n", "<leader>c", ":nohlsearch<CR>", { desc = "Clear search highl
 -- Don't yank on delete (use leader + d)
 vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')
 
--- Select all text in buffer
-vim.keymap.set("n", "<C-a>", "ggVG")
-
 -- Move to start/end of line easier
 vim.keymap.set("n", "H", "^")
 vim.keymap.set("n", "L", "g_")
