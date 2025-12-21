@@ -1,3 +1,13 @@
+-- Custom component to get repository name
+local function get_repo_name()
+    local result = vim.fn.system('git rev-parse --show-toplevel 2>/dev/null')
+    if vim.v.shell_error == 0 then
+        local repo_path = vim.fn.trim(result)
+        return vim.fn.fnamemodify(repo_path, ':t')
+    end
+    return ''
+end
+
 require('lualine').setup({
     options = {
         icons_enabled = true,
@@ -15,7 +25,16 @@ require('lualine').setup({
                 end,
             },
         },
-        lualine_b = { 'branch' },
+        lualine_b = {
+            {
+                get_repo_name,
+                icon = '󰊢',
+                cond = function()
+                    return vim.b.gitsigns_head ~= nil or vim.fn.isdirectory('.git') == 1
+                end,
+            },
+            'branch'
+        },
         lualine_c = {
             {
                 'filename',
