@@ -86,6 +86,7 @@ cmp.setup({
     { name = "lazydev", group_index = 0 },
     { name = "nvim_lsp" },
     { name = "luasnip" },
+    { name = "vim-dadbod-completion" },
     { name = "buffer" },
     { name = "path" },
   },
@@ -96,10 +97,24 @@ cmp.setup({
       vim_item.menu = ({
         nvim_lsp = "[LSP]",
         luasnip = "[Snippet]",
+        ["vim-dadbod-completion"] = "[DB]",
         buffer = "[Buffer]",
         path = "[Path]",
       })[entry.source.name]
       return vim_item
     end,
   },
+})
+
+-- Setup dadbod-completion for SQL files
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "sql", "mysql", "plsql" },
+  callback = function()
+    cmp.setup.buffer({
+      sources = {
+        { name = "vim-dadbod-completion" },
+        { name = "buffer" },
+      },
+    })
+  end,
 })

@@ -216,6 +216,17 @@ return require("packer").startup(function(use)
   -- Fugitive
   use("tpope/vim-fugitive")
 
+  -- Database
+  use("tpope/vim-dadbod")
+  use({
+    "kristijanhusak/vim-dadbod-ui",
+    requires = { "tpope/vim-dadbod" },
+  })
+  use({
+    "kristijanhusak/vim-dadbod-completion",
+    requires = { "tpope/vim-dadbod" },
+  })
+
   -- Project & Session Management
   use("ahmedkhalf/project.nvim")
   use("rmagatti/auto-session")
