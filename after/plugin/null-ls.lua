@@ -36,7 +36,7 @@ null_ls.setup({
 				buffer = bufnr,
 				callback = function()
 					local filetype = vim.bo[bufnr].filetype
-					if filetype ~= "python" then
+					if filetype ~= "python" and filetype ~= "mdx" then
 						vim.lsp.buf.format({ async = false })
 					end
 				end,

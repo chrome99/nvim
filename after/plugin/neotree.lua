@@ -3,7 +3,7 @@ require("neo-tree").setup({
   filesystem = {
     bind_to_cwd = true,
     follow_current_file = {
-      enabled = false,
+      enabled = true,
     },
   },
   window = {

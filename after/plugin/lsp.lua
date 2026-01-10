@@ -71,26 +71,39 @@ local function setup_lsp()
 				},
 			},
 		},
-		ruff = {},
-		pylsp = {
+		ruff = {
+			init_options = {
+				settings = {
+					-- Ignore noisy style rules
+					lint = {
+						ignore = {
+							"E501", -- line too long
+							"E231", -- missing whitespace after comma
+							"E203", -- whitespace before colon
+							"E701", -- multiple statements on one line
+							"W291", -- trailing whitespace
+							"W293", -- blank line contains whitespace
+						},
+					},
+				},
+			},
+		},
+		pyright = {
 			settings = {
-				pylsp = {
-					plugins = {
-						pyflakes = { enabled = false },
-						pycodestyle = { enabled = false },
-						autopep8 = { enabled = false },
-						yapf = { enabled = false },
-						mccabe = { enabled = false },
-						pylsp_mypy = { enabled = false },
-						pylsp_black = { enabled = false },
-						pylsp_isort = { enabled = false },
+				python = {
+					analysis = {
+						typeCheckingMode = "basic", -- or "strict" for more checks
+						autoSearchPaths = true,
+						useLibraryCodeForTypes = true,
 					},
 				},
 			},
 		},
 		html = { filetypes = { "html", "twig", "hbs" } },
 		cssls = {},
-		remark_ls = {},
+		remark_ls = {
+			filetypes = { "markdown" }, -- Exclude mdx
+		},
 		jsonls = {},
 		yamlls = {},
 		gopls = {},
@@ -125,7 +138,7 @@ local function setup_lsp()
 	local mason_lsp_names = {
 		vtsls = "vtsls",
 		ruff = "ruff-lsp",
-		pylsp = "python-lsp-server",
+		pyright = "pyright",
 		html = "html-lsp",
 		cssls = "css-lsp",
 		remark_ls = "remark-language-server",

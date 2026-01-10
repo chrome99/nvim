@@ -166,9 +166,6 @@ return require("packer").startup(function(use)
   use({
     "davidmh/mdx.nvim",
     requires = { "nvim-treesitter/nvim-treesitter" },
-    config = function()
-      require("mdx").setup()
-    end,
   })
 
   -- Lualine
