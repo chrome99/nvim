@@ -1,18 +1,42 @@
--- Auto-connect to all .sqlite and .db files in data/ folder
-local dbs = {}
-local data_dir = vim.fn.getcwd() .. "/data"
-local sqlite_files = vim.fn.glob(data_dir .. "/*.sqlite", false, true)
-local db_files = vim.fn.glob(data_dir .. "/*.db", false, true)
-
--- Combine both file lists
-local all_files = vim.list_extend(sqlite_files, db_files)
-
-for _, file in ipairs(all_files) do
-  local name = vim.fn.fnamemodify(file, ":t:r") -- Get filename without extension
-  table.insert(dbs, { name = name, url = "sqlite:" .. file })
+local function dbui_redraw()
+  vim.schedule(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype == "dbui" then
+        vim.api.nvim_set_current_win(win)
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("R", true, false, true), "m", false) -- mapped R
+        return
+      end
+    end
+  end)
 end
 
-vim.g.dbs = dbs
+local function add_dbui_sqlite_env(filepath)
+  local abs = vim.fn.fnamemodify(filepath, ":p")
+  local url = "sqlite:" .. abs
+  local base = vim.fn.fnamemodify(abs, ":t")
+  local stem = base:gsub("%.[^.]+$", "")
+  local key = stem:gsub("[^%w]", "_"):upper()
+
+  local var = "DB_UI_" .. key
+  local i = 2
+  while vim.env[var] and vim.env[var] ~= url do
+    var = ("DB_UI_%s_%d"):format(key, i)
+    i = i + 1
+  end
+
+  vim.env[var] = url
+end
+
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  pattern = { "*.db", "*.sqlite", "*.sqlite3" },
+  callback = function(args)
+    add_dbui_sqlite_env(args.file)
+    vim.cmd("silent! DBUI")
+    dbui_redraw()
+    vim.cmd("silent! bwipeout! " .. args.buf)
+  end,
+})
 
 -- Custom mappings for dadbod-ui
 vim.api.nvim_create_autocmd("FileType", {
