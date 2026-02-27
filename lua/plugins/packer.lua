@@ -74,6 +74,9 @@ return require("packer").startup(function(use)
     opts = {},
   })
 
+  -- Diagnostics / Quickfix UI
+  use({ "folke/trouble.nvim" })
+
   -- Keybind hints
   use({ "folke/which-key.nvim" })
 

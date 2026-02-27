@@ -78,3 +78,9 @@ end, { desc = "Toggle git log in floating window" })
 
 -- Focus floating window
 vim.keymap.set("n", "<leader>ff", "<C-w>w", { desc = "Cycle to next window" })
+
+-- Trouble diagnostics
+vim.keymap.set("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<CR>", { desc = "Diagnostics (workspace)" })
+vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<CR>", { desc = "Diagnostics (buffer)" })
+vim.keymap.set("n", "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", { desc = "Quickfix" })
+vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<CR>", { desc = "References" })
