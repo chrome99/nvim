@@ -36,3 +36,9 @@ vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "[S]earch [R]esume" }
 vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = "[S]earch [.]Recent Files" })
 vim.keymap.set("n", "<leader>sb", builtin.buffers, { desc = "[S]earch [B]uffers" })
 vim.keymap.set("n", "<leader>sy", "<cmd>Telescope yank_history<CR>", { desc = "[S]earch [Y]ank history" })
+vim.keymap.set("n", "<leader>sq", function()
+  require("telescope.builtin").find_files({
+    prompt_title = "SQL / DB Files",
+    find_command = { "rg", "--files", "--glob", "*.sql", "--glob", "*.db", "--glob", "*.sqlite", "--glob", "*.sqlite3", "--hidden" },
+  })
+end, { desc = "[S]earch [Q]uery/DB files" })

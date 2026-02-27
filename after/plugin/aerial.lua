@@ -14,6 +14,9 @@ require("aerial").setup({
 
   -- Attach to these sources in order of preference
   backends = { "treesitter", "lsp", "markdown", "asciidoc", "man" },
+  ignore = {
+    filetypes = { "sql", "mysql", "plsql" },
+  },
 
   filter_kind = {
     "Class",
@@ -28,6 +31,7 @@ require("aerial").setup({
     "Variable",
   },
 })
+
 
 vim.keymap.set("n", "<leader>a", "<cmd>AerialToggle<CR>", { desc = "Toggle [A]erial outline" })
 -- Jump between symbols with { and }
