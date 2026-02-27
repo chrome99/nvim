@@ -227,4 +227,33 @@ return require("packer").startup(function(use)
   -- Project & Session Management
   use("ahmedkhalf/project.nvim")
   use("rmagatti/auto-session")
+
+  -- Wilder (enhanced cmdline/search completion)
+  use({
+    "gelguy/wilder.nvim",
+    config = function()
+      local wilder = require("wilder")
+      wilder.setup({ modes = { ":", "/", "?" } })
+
+      wilder.set_option("renderer", wilder.popupmenu_renderer(
+        wilder.popupmenu_border_theme({
+          border = "rounded",
+          max_height = 6,
+          highlights = {
+            border = "FloatBorder",
+            default = "NormalFloat",
+          },
+        })
+      ))
+
+      wilder.set_option("pipeline", {
+        wilder.branch(
+          wilder.cmdline_pipeline({
+            fuzzy = 1,
+          }),
+          wilder.search_pipeline()
+        ),
+      })
+    end,
+  })
 end)
