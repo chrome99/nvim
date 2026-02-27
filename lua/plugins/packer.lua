@@ -92,6 +92,25 @@ return require("packer").startup(function(use)
     end,
   })
 
+  -- Surround
+  use({
+    "kylechui/nvim-surround",
+    tag = "*",
+    config = function()
+      require("nvim-surround").setup({})
+    end,
+  })
+
+  -- Yank ring
+  use({
+    "gbprod/yanky.nvim",
+    requires = { "nvim-telescope/telescope.nvim" },
+    config = function()
+      require("yanky").setup({})
+      require("telescope").load_extension("yank_history")
+    end,
+  })
+
   -- Search and Replace
   use({ "nvim-pack/nvim-spectre", requires = { "nvim-lua/plenary.nvim" } })
 
