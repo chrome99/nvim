@@ -212,6 +212,21 @@ return require("packer").startup(function(use)
 
   -- Fugitive
   use("tpope/vim-fugitive")
+  -- Delta intra-line word-diff highlights in fugitive diff buffers
+  use("farhanmustar/fugitive-delta.nvim")
+  -- Treesitter syntax colors inside fugitive diff hunks
+  use({
+    "barrettruth/diffs.nvim",
+    config = function()
+      vim.g.diffs = {
+        fugitive = true,
+        highlights = {
+          gutter = false,
+          intra = { enabled = false },  -- handled by fugitive-delta.nvim
+        },
+      }
+    end,
+  })
 
   -- Database
   use("tpope/vim-dadbod")
