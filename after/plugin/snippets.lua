@@ -9,4 +9,8 @@ ls.add_snippets("markdown", {
     { trig = "env", dscr = "Linear ENV issue markdown link" },
     fmt("[ENV-{}](https://linear.app/fleet-ai/issue/ENV-{})", { i(1), rep(1) })
   ),
+  s(
+    { trig = "td", dscr = "Todo checkbox" },
+    fmt("- [ ] {}", { i(1) })
+  ),
 })

@@ -76,6 +76,12 @@ vim.api.nvim_create_autocmd("CursorHold", {
   end,
 })
 
+-- Folding (nvim-ufo uses LSP/treesitter, these are required by ufo)
+vim.opt.foldcolumn = "0"
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
+vim.opt.foldenable = true
+
 -- Diff: use a space for filler lines (instead of "----------")
 vim.opt.fillchars:append({ diff = " " })
 

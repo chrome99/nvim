@@ -35,6 +35,7 @@ return require("packer").startup(function(use)
       "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
+      "hrsh7th/cmp-emoji",
     },
   })
 
@@ -153,7 +154,26 @@ return require("packer").startup(function(use)
   use({
     "nvim-telescope/telescope.nvim",
     tag = "0.1.8",
-    requires = { "nvim-lua/plenary.nvim" },
+    requires = {
+      "nvim-lua/plenary.nvim",
+      { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
+      "nvim-telescope/telescope-live-grep-args.nvim",
+    },
+  })
+
+  -- Better folding (LSP-based)
+  use({ "kevinhwang91/nvim-ufo", requires = { "kevinhwang91/promise-async" } })
+
+  -- LSP signature hint in insert mode
+  use({ "ray-x/lsp_signature.nvim" })
+
+  -- Symbol outline / aerial view
+  use({
+    "stevearc/aerial.nvim",
+    requires = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-tree/nvim-web-devicons",
+    },
   })
 
   -- Catppuccin Theme

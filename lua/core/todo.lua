@@ -200,15 +200,6 @@ local function setup_todo_keymaps(buf)
     vim.tbl_extend("force", opts, { desc = "Toggle multiple todo checkboxes" })
   )
 
-  vim.keymap.set("n", "o", function()
-    local row = vim.api.nvim_win_get_cursor(0)[1]
-    local current_line = vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1] or ""
-    local indent = current_line:match("^(%s*)")
-    local new_line = indent .. "- [ ] "
-    vim.api.nvim_buf_set_lines(buf, row, row, false, { new_line })
-    vim.api.nvim_win_set_cursor(0, { row + 1, #new_line + 1 })
-    vim.cmd("startinsert!")
-  end, vim.tbl_extend("force", opts, { desc = "Add new todo below" }))
 
   local function go_to_file(split_cmd)
     -- Get the current line and cursor position
@@ -278,7 +269,6 @@ local function setup_todo_keymaps(buf)
       local help_buf = vim.api.nvim_create_buf(false, true)
       local help_content = {
         "Keymaps:",
-        "o - Add new todo below",
         "<Enter> - Toggle checkbox",
         "V + <Enter> - Toggle multiple todos",
         "<Ctrl-q> - Close todo",
@@ -289,7 +279,7 @@ local function setup_todo_keymaps(buf)
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 8
+      local help_height = 7
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
