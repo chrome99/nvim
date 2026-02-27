@@ -40,3 +40,15 @@ vim.o.scrolloff = 5
 
 -- Case insensitive search
 vim.o.ignorecase = true
+
+-- Diff: use a space for filler lines (instead of "----------")
+vim.opt.fillchars:append({ diff = " " })
+
+vim.api.nvim_create_autocmd("OptionSet", {
+  pattern = "diff",
+  callback = function()
+    if vim.wo.diff then
+      vim.cmd("normal! zR")
+    end
+  end,
+})
