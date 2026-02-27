@@ -41,6 +41,41 @@ vim.o.scrolloff = 5
 -- Case insensitive search
 vim.o.ignorecase = true
 
+-- Diagnostics
+vim.diagnostic.config({
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = "",
+      [vim.diagnostic.severity.WARN]  = "",
+      [vim.diagnostic.severity.INFO]  = "",
+      [vim.diagnostic.severity.HINT]  = "",
+    },
+  },
+  virtual_text = {
+    prefix = "",
+    spacing = 2,
+    format = function(d)
+      local icons = { ERROR = "", WARN = "", INFO = "", HINT = "" }
+      return string.format("%s %s", icons[vim.diagnostic.severity[d.severity]], d.message)
+    end,
+  },
+  float = {
+    border = "rounded",
+    source = true,
+  },
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+})
+
+-- Auto-show diagnostic float on cursor hold
+vim.o.updatetime = 500
+vim.api.nvim_create_autocmd("CursorHold", {
+  callback = function()
+    vim.diagnostic.open_float(nil, { focus = false })
+  end,
+})
+
 -- Diff: use a space for filler lines (instead of "----------")
 vim.opt.fillchars:append({ diff = " " })
 
