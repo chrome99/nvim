@@ -4,6 +4,9 @@ local state = {
     win = -1,
   },
   help_win = -1,
+  watcher = nil,
+  saving = false,
+  save_id = 0,
 }
 
 -- Create persistent todo file path
@@ -95,10 +98,40 @@ local function load_todo_file(buf)
 end
 
 local function save_todo_file(buf)
+  state.saving = true
+  state.save_id = state.save_id + 1
+  local id = state.save_id
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   vim.fn.writefile(lines, todo_file)
   vim.api.nvim_buf_set_option(buf, "modified", false)
+  vim.defer_fn(function()
+    if state.save_id == id then
+      state.saving = false
+    end
+  end, 200)
 end
+
+local function start_file_watcher()
+  if state.watcher then return end
+  state.watcher = vim.loop.new_fs_event()
+  if not state.watcher then return end
+  state.watcher:start(todo_file, {}, vim.schedule_wrap(function(err, _, _)
+    if err or state.saving then return end
+    if not vim.api.nvim_buf_is_valid(state.floating.buf) then return end
+    load_todo_file(state.floating.buf)
+    if vim.api.nvim_win_is_valid(state.floating.win) then
+      vim.notify("Todo reloaded from disk", vim.log.levels.INFO)
+    end
+  end))
+end
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+  callback = function()
+    if state.watcher then
+      state.watcher:stop()
+    end
+  end,
+})
 
 local function toggle_checkbox()
   local line = vim.api.nvim_get_current_line()
@@ -166,11 +199,6 @@ local function setup_todo_keymaps(buf)
     toggle_checkbox_range,
     vim.tbl_extend("force", opts, { desc = "Toggle multiple todo checkboxes" })
   )
-
-  vim.keymap.set("n", "<C-s>", function()
-    save_todo_file(buf)
-    vim.notify("Todo saved!", vim.log.levels.INFO)
-  end, vim.tbl_extend("force", opts, { desc = "Save todo" }))
 
   vim.keymap.set("n", "o", function()
     local row = vim.api.nvim_win_get_cursor(0)[1]
@@ -253,7 +281,6 @@ local function setup_todo_keymaps(buf)
         "o - Add new todo below",
         "<Enter> - Toggle checkbox",
         "V + <Enter> - Toggle multiple todos",
-        "<Ctrl-s> - Save todo",
         "<Ctrl-q> - Close todo",
         "gf - Close todo and go to file",
         "gF - Close todo and go to file in new tab",
@@ -262,7 +289,7 @@ local function setup_todo_keymaps(buf)
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 9
+      local help_height = 8
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
@@ -306,12 +333,14 @@ local function toggle_todo()
       end,
     })
 
-    vim.api.nvim_create_autocmd("TextChanged", {
+    vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
       buffer = state.floating.buf,
       callback = function()
-        vim.api.nvim_buf_set_option(state.floating.buf, "modified", true)
+        save_todo_file(state.floating.buf)
       end,
     })
+
+    start_file_watcher()
   else
     save_todo_file(state.floating.buf)
     if vim.api.nvim_win_is_valid(state.help_win) then
