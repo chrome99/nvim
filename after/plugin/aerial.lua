@@ -34,6 +34,6 @@ require("aerial").setup({
 
 
 vim.keymap.set("n", "<leader>a", "<cmd>AerialToggle<CR>", { desc = "Toggle [A]erial outline" })
--- Jump between symbols with { and }
-vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { desc = "Prev symbol" })
-vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { desc = "Next symbol" })
+-- Jump between symbols with [a and ]a
+vim.keymap.set("n", "[a", "<cmd>AerialPrev<CR>", { desc = "Prev symbol" })
+vim.keymap.set("n", "]a", "<cmd>AerialNext<CR>", { desc = "Next symbol" })
