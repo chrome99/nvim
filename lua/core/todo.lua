@@ -4,13 +4,36 @@ local state = {
     win = -1,
   },
   help_win = -1,
-  watcher = nil,
-  saving = false,
-  save_id = 0,
 }
 
--- Create persistent todo file path
 local todo_file = vim.fn.stdpath("state") .. "/todo.md"
+local lock_file = vim.fn.stdpath("state") .. "/todo.lock"
+
+local function pid_alive(pid)
+  vim.fn.system("kill -0 " .. pid .. " 2>/dev/null")
+  return vim.v.shell_error == 0
+end
+
+local function acquire_lock()
+  if vim.fn.filereadable(lock_file) == 1 then
+    local pid = tonumber(vim.fn.readfile(lock_file)[1])
+    if pid and pid_alive(pid) then
+      return false
+    end
+    -- Stale lock — process is gone, clean it up
+  end
+  vim.fn.writefile({ tostring(vim.fn.getpid()) }, lock_file)
+  return true
+end
+
+local function release_lock()
+  if vim.fn.filereadable(lock_file) == 1 then
+    local pid = tonumber(vim.fn.readfile(lock_file)[1])
+    if pid == vim.fn.getpid() then
+      vim.fn.delete(lock_file)
+    end
+  end
+end
 
 local function create_floating_window(opts)
   opts = opts or {}
@@ -49,7 +72,6 @@ local function create_floating_window(opts)
   vim.api.nvim_win_set_option(win, "relativenumber", true)
   vim.api.nvim_win_set_option(win, "wrap", true)
 
-  -- Set indent to 2 spaces for this buffer
   vim.api.nvim_buf_set_option(buf, "shiftwidth", 2)
   vim.api.nvim_buf_set_option(buf, "tabstop", 2)
   vim.api.nvim_buf_set_option(buf, "softtabstop", 2)
@@ -59,14 +81,9 @@ local function create_floating_window(opts)
 end
 
 local function load_todo_file(buf)
-  -- Ensure buffer is modifiable
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
+  vim.fn.mkdir(vim.fn.stdpath("state"), "p")
 
-  -- Create the state directory if it doesn't exist
-  local state_dir = vim.fn.stdpath("state")
-  vim.fn.mkdir(state_dir, "p")
-
-  -- Load todo file content if it exists
   if vim.fn.filereadable(todo_file) == 1 then
     local lines = vim.fn.readfile(todo_file)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -93,45 +110,14 @@ local function load_todo_file(buf)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, initial_content)
   end
 
-  -- Set buffer as unmodified initially
   vim.api.nvim_buf_set_option(buf, "modified", false)
 end
 
 local function save_todo_file(buf)
-  state.saving = true
-  state.save_id = state.save_id + 1
-  local id = state.save_id
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   vim.fn.writefile(lines, todo_file)
   vim.api.nvim_buf_set_option(buf, "modified", false)
-  vim.defer_fn(function()
-    if state.save_id == id then
-      state.saving = false
-    end
-  end, 200)
 end
-
-local function start_file_watcher()
-  if state.watcher then return end
-  state.watcher = vim.loop.new_fs_event()
-  if not state.watcher then return end
-  state.watcher:start(todo_file, {}, vim.schedule_wrap(function(err, _, _)
-    if err or state.saving then return end
-    if not vim.api.nvim_buf_is_valid(state.floating.buf) then return end
-    load_todo_file(state.floating.buf)
-    if vim.api.nvim_win_is_valid(state.floating.win) then
-      vim.notify("Todo reloaded from disk", vim.log.levels.INFO)
-    end
-  end))
-end
-
-vim.api.nvim_create_autocmd("VimLeavePre", {
-  callback = function()
-    if state.watcher then
-      state.watcher:stop()
-    end
-  end,
-})
 
 local function toggle_checkbox()
   local line = vim.api.nvim_get_current_line()
@@ -180,16 +166,23 @@ local function toggle_checkbox_range()
   end
 end
 
+local function close_todo(buf)
+  save_todo_file(buf)
+  release_lock()
+  if vim.api.nvim_win_is_valid(state.help_win) then
+    vim.api.nvim_win_close(state.help_win, true)
+    state.help_win = -1
+  end
+  if vim.api.nvim_win_is_valid(state.floating.win) then
+    vim.api.nvim_win_hide(state.floating.win)
+  end
+end
+
 local function setup_todo_keymaps(buf)
   local opts = { buffer = buf, silent = true }
 
   vim.keymap.set("n", "<C-q>", function()
-    save_todo_file(buf)
-    if vim.api.nvim_win_is_valid(state.help_win) then
-      vim.api.nvim_win_close(state.help_win, true)
-      state.help_win = -1
-    end
-    vim.api.nvim_win_hide(state.floating.win)
+    close_todo(buf)
   end, vim.tbl_extend("force", opts, { desc = "Close todo window" }))
 
   vim.keymap.set("n", "<cr>", toggle_checkbox, vim.tbl_extend("force", opts, { desc = "Toggle todo checkbox" }))
@@ -200,23 +193,18 @@ local function setup_todo_keymaps(buf)
     vim.tbl_extend("force", opts, { desc = "Toggle multiple todo checkboxes" })
   )
 
-
   local function go_to_file(split_cmd)
-    -- Get the current line and cursor position
     local line = vim.api.nvim_get_current_line()
     local col = vim.api.nvim_win_get_cursor(0)[2]
 
-    -- Find the word under cursor that might contain file:line format
     local start_pos = col
     local end_pos = col
 
-    -- Find start of word (go back until we hit whitespace or start of line)
     while start_pos > 0 and line:sub(start_pos, start_pos):match("[%S]") do
       start_pos = start_pos - 1
     end
     start_pos = start_pos + 1
 
-    -- Find end of word (go forward until we hit whitespace or end of line)
     while end_pos < #line and line:sub(end_pos + 1, end_pos + 1):match("[%S]") do
       end_pos = end_pos + 1
     end
@@ -228,7 +216,6 @@ local function setup_todo_keymaps(buf)
       return
     end
 
-    -- Parse file:line or file:line:col format
     local file_part, line_part, col_part = filename:match("^(.+):(%d+):?(%d*)$")
     if not file_part then
       file_part = filename
@@ -236,16 +223,9 @@ local function setup_todo_keymaps(buf)
       col_part = nil
     end
 
-    save_todo_file(buf)
-    if vim.api.nvim_win_is_valid(state.help_win) then
-      vim.api.nvim_win_close(state.help_win, true)
-      state.help_win = -1
-    end
-    vim.api.nvim_win_hide(state.floating.win)
-
+    close_todo(buf)
     vim.cmd(split_cmd .. " " .. vim.fn.fnameescape(file_part))
 
-    -- Jump to line and column if specified
     if line_part then
       local line_num = tonumber(line_part)
       local col_num = col_part and tonumber(col_part) or 1
@@ -308,6 +288,11 @@ end
 
 local function toggle_todo()
   if not vim.api.nvim_win_is_valid(state.floating.win) then
+    if not acquire_lock() then
+      vim.notify("Todo is already open in another instance", vim.log.levels.WARN)
+      return
+    end
+
     state.floating = create_floating_window()
     load_todo_file(state.floating.buf)
     setup_todo_keymaps(state.floating.buf)
@@ -316,30 +301,21 @@ local function toggle_todo()
       buffer = state.floating.buf,
       callback = function()
         save_todo_file(state.floating.buf)
+        release_lock()
         if vim.api.nvim_win_is_valid(state.help_win) then
           vim.api.nvim_win_close(state.help_win, true)
           state.help_win = -1
         end
       end,
     })
-
-    vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-      buffer = state.floating.buf,
-      callback = function()
-        save_todo_file(state.floating.buf)
-      end,
-    })
-
-    start_file_watcher()
   else
-    save_todo_file(state.floating.buf)
-    if vim.api.nvim_win_is_valid(state.help_win) then
-      vim.api.nvim_win_close(state.help_win, true)
-      state.help_win = -1
-    end
-    vim.api.nvim_win_hide(state.floating.win)
+    close_todo(state.floating.buf)
   end
 end
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+  callback = release_lock,
+})
 
 vim.api.nvim_create_user_command("Todo", toggle_todo, {})
 vim.keymap.set("n", "<space>td", toggle_todo, { desc = "Toggle todo window" })
