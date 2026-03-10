@@ -28,7 +28,16 @@ vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "[S]earch [H]elp" 
 vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "[S]earch [K]eymaps" })
 vim.keymap.set("n", "<leader>sf", builtin.find_files, { desc = "[S]earch [F]iles" })
 vim.keymap.set("n", "<leader>sp", "<cmd>Telescope projects<CR>", { desc = "[S]earch [P]rojects" })
-vim.keymap.set("n", "<leader>ss", builtin.builtin, { desc = "[S]earch [S]elect Telescope" })
+vim.keymap.set("n", "<leader>ss", function()
+  local staged = vim.fn.systemlist("git diff --cached --name-only --diff-filter=ACMR")
+  if vim.v.shell_error ~= 0 or #staged == 0 then
+    vim.notify("No staged files", vim.log.levels.INFO)
+    return
+  end
+  local cwd = vim.fn.getcwd()
+  local abs_files = vim.tbl_map(function(f) return cwd .. "/" .. f end, staged)
+  builtin.live_grep({ search_dirs = abs_files, prompt_title = "Grep Staged Files" })
+end, { desc = "[S]earch [S]taged (grep)" })
 vim.keymap.set("n", "<leader>sw", builtin.grep_string, { desc = "[S]earch current [W]ord" })
 vim.keymap.set("n", "<leader>sg", require("telescope").extensions.live_grep_args.live_grep_args, { desc = "[S]earch by [G]rep (args)" })
 vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
