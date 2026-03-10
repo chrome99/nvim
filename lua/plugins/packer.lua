@@ -313,4 +313,6 @@ return require("packer").startup(function(use)
       })
     end,
   })
+
+  use("Root-lee/screensaver.nvim")
 end)
