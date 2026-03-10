@@ -258,10 +258,12 @@ return require("packer").startup(function(use)
     "barrettruth/diffs.nvim",
     config = function()
       vim.g.diffs = {
-        fugitive = true,
+        integrations = {
+          fugitive = true,
+        },
         highlights = {
           gutter = false,
-          intra = { enabled = false },  -- handled by fugitive-delta.nvim
+          intra = { enabled = false }, -- handled by fugitive-delta.nvim
         },
       }
     end,
@@ -289,16 +291,17 @@ return require("packer").startup(function(use)
       local wilder = require("wilder")
       wilder.setup({ modes = { ":", "/", "?" } })
 
-      wilder.set_option("renderer", wilder.popupmenu_renderer(
-        wilder.popupmenu_border_theme({
+      wilder.set_option(
+        "renderer",
+        wilder.popupmenu_renderer(wilder.popupmenu_border_theme({
           border = "rounded",
           max_height = 6,
           highlights = {
             border = "FloatBorder",
             default = "NormalFloat",
           },
-        })
-      ))
+        }))
+      )
 
       wilder.set_option("pipeline", {
         wilder.branch(
