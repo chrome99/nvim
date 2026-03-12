@@ -8,6 +8,57 @@ local state = {
 
 local todo_file = vim.fn.stdpath("state") .. "/todo.md"
 local lock_file = vim.fn.stdpath("state") .. "/todo.lock"
+local backup_dir = vim.fn.stdpath("state") .. "/todo_backups/"
+local load_todo_file  -- forward declaration
+local backup_file = backup_dir .. "todo_" .. os.date("%Y-%m-%d") .. ".md"
+
+local function backup_todo()
+  if vim.fn.filereadable(todo_file) == 0 then return end
+  vim.fn.mkdir(backup_dir, "p")
+  if vim.fn.filereadable(backup_file) == 1 then return end
+  vim.fn.system({ "cp", todo_file, backup_file })
+  local files = vim.fn.glob(backup_dir .. "todo_[0-9][0-9][0-9][0-9]-*.md", false, true)
+  table.sort(files)
+  for i = 1, #files - 30 do
+    vim.fn.delete(files[i])
+  end
+end
+
+local function restore_todo()
+  local daily = vim.fn.glob(backup_dir .. "todo_[0-9][0-9][0-9][0-9]-*.md", false, true)
+  local pre = vim.fn.glob(backup_dir .. "todo_pre-restore_*.md", false, true)
+  local files = vim.list_extend(daily, pre)
+  if #files == 0 then
+    vim.notify("No todo backups found", vim.log.levels.WARN)
+    return
+  end
+  table.sort(files, function(a, b) return a > b end)
+  local labels = vim.tbl_map(function(f)
+    local date = f:match("todo_(%d%d%d%d%-%d%d%-%d%d)%.md")
+    if date then return date end
+    local ts = f:match("todo_pre%-restore_(%d%d%d%d%-%d%d%-%d%dT%d%d%d%d%d%d)%.md")
+    if ts then return "pre-restore " .. ts end
+    return f
+  end, files)
+  vim.ui.select(labels, { prompt = "Restore todo from backup:" }, function(choice, idx)
+    if not choice then return end
+    -- delete old pre-restore backups (except the one being restored)
+    for _, f in ipairs(vim.fn.glob(backup_dir .. "todo_pre-restore_*.md", false, true)) do
+      if f ~= files[idx] then vim.fn.delete(f) end
+    end
+    local pre_restore = backup_dir .. "todo_pre-restore_" .. os.date("%Y-%m-%dT%H%M%S") .. ".md"
+    if vim.fn.filereadable(todo_file) == 1 then
+      vim.fn.system({ "cp", todo_file, pre_restore })
+    end
+    vim.fn.system({ "cp", files[idx], todo_file })
+    if files[idx]:find("pre%-restore") then vim.fn.delete(files[idx]) end
+    vim.notify("Restored todo from " .. choice, vim.log.levels.INFO)
+    local buf = state.floating.buf
+    if buf and vim.api.nvim_buf_is_valid(buf) then
+      load_todo_file(buf)
+    end
+  end)
+end
 
 local function pid_alive(pid)
   vim.fn.system("kill -0 " .. pid .. " 2>/dev/null")
@@ -80,7 +131,7 @@ local function create_floating_window(opts)
   return { buf = buf, win = win }
 end
 
-local function load_todo_file(buf)
+load_todo_file = function(buf)
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
 
@@ -241,6 +292,8 @@ local function setup_todo_keymaps(buf)
     go_to_file("tabedit")
   end, vim.tbl_extend("force", opts, { desc = "Close todo and go to file in new tab" }))
 
+  vim.keymap.set("n", "R", restore_todo, vim.tbl_extend("force", opts, { desc = "Restore todo from backup" }))
+
   vim.keymap.set("n", "?", function()
     if vim.api.nvim_win_is_valid(state.help_win) then
       vim.api.nvim_win_close(state.help_win, true)
@@ -254,12 +307,13 @@ local function setup_todo_keymaps(buf)
         "<Ctrl-q> - Close todo",
         "gf - Close todo and go to file",
         "gF - Close todo and go to file in new tab",
+        "R - Restore from backup",
         "? - Toggle this help",
       }
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 7
+      local help_height = 8
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
@@ -318,7 +372,10 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 })
 
 vim.api.nvim_create_user_command("Todo", toggle_todo, {})
+vim.api.nvim_create_user_command("TodoRestore", restore_todo, {})
 vim.keymap.set("n", "<space>td", toggle_todo, { desc = "Toggle todo window" })
+
+backup_todo()
 
 -- Yank current file path with line number
 vim.keymap.set("n", "<leader>yf", function()
