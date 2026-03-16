@@ -85,6 +85,25 @@ vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
 vim.opt.foldenable = true
 
+-- Disable crazy neovide features
+if vim.g.neovide then
+  vim.o.guifont = "JetBrainsMono Nerd Font:h15"
+
+  -- disable animations
+  vim.g.neovide_cursor_animation_length = 0
+  vim.g.neovide_scroll_animation_length = 0
+  vim.g.neovide_position_animation_length = 0
+  vim.g.neovide_window_blurred = false
+
+  -- disable cursor effects
+  vim.g.neovide_cursor_trail_size = 0
+  vim.g.neovide_cursor_vfx_mode = ""
+
+  -- disable floating blur
+  vim.g.neovide_floating_blur_amount_x = 0
+  vim.g.neovide_floating_blur_amount_y = 0
+end
+
 -- Diff: use a space for filler lines (instead of "----------")
 vim.opt.fillchars:append({ diff = " " })
 
