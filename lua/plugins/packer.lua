@@ -232,14 +232,6 @@ return require("packer").startup(function(use)
   use({ "vim-denops/denops.vim" })
   use({ "kbwo/vim-shareedit" })
 
-  -- ClaudeCode AI Agent
-  use({
-    "greggh/claude-code.nvim",
-    requires = {
-      "nvim-lua/plenary.nvim",
-    },
-  })
-
   -- Buffer line
   use({
     "akinsho/bufferline.nvim",
