@@ -85,6 +85,17 @@ vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<
 vim.keymap.set("n", "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", { desc = "Quickfix" })
 vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<CR>", { desc = "References" })
 
+-- Copy file itself to clipboard (paste as file in Finder/etc)
+vim.keymap.set("n", "<leader>ya", function()
+  local path = vim.fn.expand("%:p")
+  if path == "" then
+    vim.notify("No file", vim.log.levels.WARN)
+    return
+  end
+  vim.fn.system({ "osascript", "-e", 'set the clipboard to (POSIX file "' .. path .. '")' })
+  vim.notify("Copied file: " .. vim.fn.expand("%:t"), vim.log.levels.INFO)
+end, { desc = "Copy file to clipboard" })
+
 -- Yank diagnostic message on current line
 vim.keymap.set("n", "<leader>yx", function()
   local diags = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
