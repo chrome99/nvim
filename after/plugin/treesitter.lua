@@ -2,7 +2,7 @@
 -- take precedence in the rtp (they lack "; extends") and contain patterns
 -- incompatible with 0.12's query engine, causing node:range() crashes.
 -- Override those queries with Neovim's built-in versions.
-local builtin_langs = { 'c', 'lua', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+local builtin_langs = { 'c', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
 local query_types = { 'highlights', 'injections', 'locals', 'folds', 'indents' }
 for _, lang in ipairs(builtin_langs) do
   for _, qtype in ipairs(query_types) do

@@ -1,5 +1,5 @@
 require("screensaver").setup({
-  idle_ms = 20 * 1000,
+  idle_ms = 60 * 1000,
   auto_start = true,
   disable_on_focus_lost = true,
   exit_key = "<Esc>",
