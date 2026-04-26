@@ -1,7 +1,4 @@
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/f06ce405-b865-4a2b-bc16-bfd478a1982c" alt="Okapi Logo" width="500" />
-  <h1>Neovim Config</h1>
-</div>
+# Neovim Config
 
 Personal Neovim config written in Lua.
 
