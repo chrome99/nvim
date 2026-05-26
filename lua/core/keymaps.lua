@@ -103,7 +103,32 @@ vim.keymap.set("n", "<leader>yx", function()
     vim.notify("No diagnostics on this line", vim.log.levels.INFO)
     return
   end
-  local msg = table.concat(vim.tbl_map(function(d) return d.message end, diags), "\n")
+  local msg = table.concat(
+    vim.tbl_map(function(d)
+      return d.message
+    end, diags),
+    "\n"
+  )
   vim.fn.setreg("+", msg)
   vim.notify("Yanked: " .. msg, vim.log.levels.INFO)
 end, { desc = "Yank diagnostic" })
+
+vim.keymap.set("n", "<leader>r", function()
+  local cmd = vim.fn.input("cmd: ")
+  if cmd == "" then
+    return
+  end
+
+  local output = vim.fn.system(cmd):gsub("\n", "")
+  vim.api.nvim_put({ output }, "c", true, true)
+end)
+
+vim.keymap.set("n", "<leader>fp", function()
+  local query = vim.fn.input("fp: ")
+  if query == "" then
+    return
+  end
+
+  local output = vim.fn.system("fp " .. vim.fn.shellescape(query)):gsub("\n", "")
+  vim.api.nvim_put({ output }, "c", true, true)
+end, { desc = "Find path" })
