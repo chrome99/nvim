@@ -193,9 +193,6 @@ return require("packer").startup(function(use)
     },
   })
 
-  -- Alpha Dashboard
-  use({ "goolord/alpha-nvim" })
-
   -- Treesitter
   use({
     "nvim-treesitter/nvim-treesitter",
@@ -254,7 +251,6 @@ return require("packer").startup(function(use)
           fugitive = true,
         },
         highlights = {
-          gutter = false,
           intra = { enabled = false }, -- handled by fugitive-delta.nvim
         },
       }

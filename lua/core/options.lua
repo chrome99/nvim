@@ -1,6 +1,8 @@
 -- Disable denops version check (nvim version behind requirement)
 vim.g.denops_disable_version_check = true
 
+vim.opt.shortmess:append("I")
+
 -- Indent with 4 spaces
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
