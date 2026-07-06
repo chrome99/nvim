@@ -38,6 +38,60 @@ vim.keymap.set("n", "<leader>ss", function()
   local abs_files = vim.tbl_map(function(f) return cwd .. "/" .. f end, staged)
   builtin.live_grep({ search_dirs = abs_files, prompt_title = "Grep Staged Files" })
 end, { desc = "[S]earch [S]taged (grep)" })
+-- Turn `git status --porcelain` lines into a list of grep-able file paths.
+-- Each line looks like: "XY path" where X/Y are status codes, e.g.
+--   " M lua/foo.lua"   (unstaged modified)
+--   "A  lua/bar.lua"   (staged add)
+--   "?? scratch.txt"   (untracked)
+--   "R  old.lua -> new.lua"  (rename)
+-- Turn `git status --porcelain` lines into a list of file paths (repo-root
+-- relative). Each line is "XY path", e.g. " M lua/foo.lua", "?? new.txt",
+-- "R  old.lua -> new.lua". We skip deletions (nothing on disk to open) and
+-- keep the NEW path for renames.
+local function parse_porcelain(lines)
+  local files = {}
+  for _, line in ipairs(lines) do
+    if line ~= "" then
+      local x, y = line:sub(1, 1), line:sub(2, 2)
+      if x ~= "D" and y ~= "D" then
+        local path = line:sub(4)
+        local arrow = path:find(" -> ", 1, true)
+        if arrow then
+          path = path:sub(arrow + 4)
+        end
+        path = path:gsub('^"(.*)"$', "%1") -- porcelain quotes paths with odd chars
+        table.insert(files, path)
+      end
+    end
+  end
+  return files
+end
+
+vim.keymap.set("n", "<leader>sm", function()
+  local root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Not a git repo", vim.log.levels.WARN)
+    return
+  end
+  local files = parse_porcelain(vim.fn.systemlist("git status --porcelain"))
+  if #files == 0 then
+    vim.notify("No modified files", vim.log.levels.INFO)
+    return
+  end
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
+  local make_entry = require("telescope.make_entry")
+  local conf = require("telescope.config").values
+  pickers.new({}, {
+    prompt_title = "Modified Files",
+    finder = finders.new_table({
+      results = files,
+      entry_maker = make_entry.gen_from_file({ cwd = root }),
+    }),
+    sorter = conf.file_sorter({}),
+    previewer = conf.file_previewer({ cwd = root }),
+  }):find()
+end, { desc = "[S]earch [M]odified (open)" })
 vim.keymap.set("n", "<leader>sw", builtin.grep_string, { desc = "[S]earch current [W]ord" })
 vim.keymap.set("n", "<leader>sg", require("telescope").extensions.live_grep_args.live_grep_args, { desc = "[S]earch by [G]rep (args)" })
 vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
