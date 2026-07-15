@@ -16,35 +16,32 @@ for _, lang in ipairs(builtin_langs) do
   end
 end
 
+-- Neovim 0.12 bundles both the parser AND queries for builtin_langs. Letting
+-- nvim-treesitter install its own (older) parsers for these shadows the bundled
+-- ones on the rtp, so its stale parser gets paired with the built-in query set
+-- above -> node-type mismatches (e.g. "vim" parser missing the "tab" node).
+-- Keep nvim-treesitter's hands off these: never install, always ignore.
+local builtin_set = {}
+for _, lang in ipairs(builtin_langs) do builtin_set[lang] = true end
+
+local want = {
+    'astro', 'python', 'lua', 'javascript', 'typescript', 'vimdoc', 'vim',
+    'regex', 'terraform', 'sql', 'dockerfile', 'toml', 'json', 'go',
+    'gitignore', 'yaml', 'make', 'cmake', 'markdown', 'markdown_inline',
+    'bash', 'tsx', 'css', 'html',
+}
+local ensure = {}
+for _, lang in ipairs(want) do
+  if not builtin_set[lang] then table.insert(ensure, lang) end
+end
+
+local ignore = { 'javascript' }
+for _, lang in ipairs(builtin_langs) do table.insert(ignore, lang) end
+
 require'nvim-treesitter.configs'.setup {
-  ensure_installed = {
-      'astro',
-      'python',
-      'lua',
-      'javascript',
-      'typescript',
-      'vimdoc',
-      'vim',
-      'regex',
-      'terraform',
-      'sql',
-      'dockerfile',
-      'toml',
-      'json',
-      'go',
-      'gitignore',
-      'yaml',
-      'make',
-      'cmake',
-      'markdown',
-      'markdown_inline',
-      'bash',
-      'tsx',
-      'css',
-      'html',
-  },
+  ensure_installed = ensure,
   auto_install = true,
-  ignore_install = { "javascript" },
+  ignore_install = ignore,
   highlight = {
     enable = false, -- nvim-treesitter highlight unsupported on Neovim 0.12+; built-in handles it
   },
