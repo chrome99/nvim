@@ -23,6 +23,22 @@ local function setup_lsp()
 
 			local client = vim.lsp.get_client_by_id(event.data.client_id)
 
+			-- Python: organize imports + format on save. No fixAll (never
+			-- auto-removes unused imports or applies other lint fixes on save).
+			if client and client.name == "ruff" then
+				vim.api.nvim_create_autocmd("BufWritePre", {
+					buffer = event.buf,
+					group = vim.api.nvim_create_augroup("RuffOnSave", { clear = false }),
+					callback = function()
+						vim.lsp.buf.code_action({
+							context = { only = { "source.organizeImports.ruff" }, diagnostics = {} },
+							apply = true,
+						})
+						vim.lsp.buf.format({ async = false, name = "ruff" })
+					end,
+				})
+			end
+
 			if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
 				map("<leader>th", function()
 					vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
@@ -58,28 +74,13 @@ local function setup_lsp()
 				},
 			},
 		},
-		ruff = {
-			init_options = {
-				settings = {
-					-- Ignore noisy style rules
-					lint = {
-						ignore = {
-							"E501", -- line too long
-							"E231", -- missing whitespace after comma
-							"E203", -- whitespace before colon
-							"E701", -- multiple statements on one line
-							"W291", -- trailing whitespace
-							"W293", -- blank line contains whitespace
-						},
-					},
-				},
-			},
-		},
-		pyright = {
+		-- Rules owned by pyproject.toml (select = ["ALL"]); no editor overrides
+		ruff = {},
+		basedpyright = {
 			settings = {
-				python = {
+				basedpyright = {
 					analysis = {
-						typeCheckingMode = "basic", -- or "strict" for more checks
+						typeCheckingMode = "recommended", -- matches pyproject strict gate
 						autoSearchPaths = true,
 						useLibraryCodeForTypes = true,
 					},
@@ -124,8 +125,8 @@ local function setup_lsp()
 	-- Correct Mason package names
 	local mason_lsp_names = {
 		vtsls = "vtsls",
-		ruff = "ruff-lsp",
-		pyright = "pyright",
+		ruff = "ruff",
+		basedpyright = "basedpyright",
 		html = "html-lsp",
 		cssls = "css-lsp",
 		remark_ls = "remark-language-server",

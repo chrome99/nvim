@@ -53,7 +53,6 @@ return require("packer").startup(function(use)
     requires = {
       "williamboman/mason-lspconfig.nvim",
       "WhoIsSethDaniel/mason-tool-installer.nvim",
-      { "j-hui/fidget.nvim", opts = {} },
     },
   })
 
@@ -146,7 +145,11 @@ return require("packer").startup(function(use)
   use({
     "echasnovski/mini.notify",
     config = function()
-      require("mini.notify").setup()
+      -- lsp_progress off: basedpyright fires $/progress on every keystroke,
+      -- which mini.notify popped as per-letter spam. Keeps normal notifications.
+      require("mini.notify").setup({
+        lsp_progress = { enable = false },
+      })
     end,
   })
 
