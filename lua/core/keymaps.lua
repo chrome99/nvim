@@ -73,7 +73,7 @@ vim.keymap.set("n", "L", "g_")
 
 -- Git log floating window
 vim.keymap.set("n", "<leader>gl", function()
-  require("core.git-log").toggle_git_log()
+	require("core.git-log").toggle_git_log()
 end, { desc = "Toggle git log in floating window" })
 
 -- Focus floating window
@@ -87,48 +87,48 @@ vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<CR>", { de
 
 -- Copy file itself to clipboard (paste as file in Finder/etc)
 vim.keymap.set("n", "<leader>ya", function()
-  local path = vim.fn.expand("%:p")
-  if path == "" then
-    vim.notify("No file", vim.log.levels.WARN)
-    return
-  end
-  vim.fn.system({ "osascript", "-e", 'set the clipboard to (POSIX file "' .. path .. '")' })
-  vim.notify("Copied file: " .. vim.fn.expand("%:t"), vim.log.levels.INFO)
+	local path = vim.fn.expand("%:p")
+	if path == "" then
+		vim.notify("No file", vim.log.levels.WARN)
+		return
+	end
+	vim.fn.system({ "osascript", "-e", 'set the clipboard to (POSIX file "' .. path .. '")' })
+	vim.notify("Copied file: " .. vim.fn.expand("%:t"), vim.log.levels.INFO)
 end, { desc = "Copy file to clipboard" })
 
 -- Yank diagnostic message on current line
 vim.keymap.set("n", "<leader>yx", function()
-  local diags = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
-  if #diags == 0 then
-    vim.notify("No diagnostics on this line", vim.log.levels.INFO)
-    return
-  end
-  local msg = table.concat(
-    vim.tbl_map(function(d)
-      return d.message
-    end, diags),
-    "\n"
-  )
-  vim.fn.setreg("+", msg)
-  vim.notify("Yanked: " .. msg, vim.log.levels.INFO)
+	local diags = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
+	if #diags == 0 then
+		vim.notify("No diagnostics on this line", vim.log.levels.INFO)
+		return
+	end
+	local msg = table.concat(
+		vim.tbl_map(function(d)
+			return d.message
+		end, diags),
+		"\n"
+	)
+	vim.fn.setreg("+", msg)
+	vim.notify("Yanked: " .. msg, vim.log.levels.INFO)
 end, { desc = "Yank diagnostic" })
 
 vim.keymap.set("n", "<leader>r", function()
-  local cmd = vim.fn.input("cmd: ")
-  if cmd == "" then
-    return
-  end
+	local cmd = vim.fn.input("cmd: ")
+	if cmd == "" then
+		return
+	end
 
-  local output = vim.fn.system(cmd):gsub("\n", "")
-  vim.api.nvim_put({ output }, "c", true, true)
+	local output = vim.fn.system(cmd):gsub("\n", "")
+	vim.api.nvim_put({ output }, "c", true, true)
 end)
 
 vim.keymap.set("n", "<leader>fp", function()
-  local query = vim.fn.input("fp: ")
-  if query == "" then
-    return
-  end
+	local query = vim.fn.input("fp: ")
+	if query == "" then
+		return
+	end
 
-  local output = vim.fn.system("fp " .. vim.fn.shellescape(query)):gsub("\n", "")
-  vim.api.nvim_put({ output }, "c", true, true)
+	local output = vim.fn.system("fp " .. vim.fn.shellescape(query)):gsub("\n", "")
+	vim.api.nvim_put({ output }, "c", true, true)
 end, { desc = "Find path" })
