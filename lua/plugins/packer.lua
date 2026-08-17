@@ -260,6 +260,9 @@ return require("packer").startup(function(use)
     end,
   })
 
+  -- CodeDiff (VSCode-style git diff viewer, side-by-side or inline)
+  use("esmuellert/codediff.nvim")
+
   -- Database
   use("tpope/vim-dadbod")
   use({
