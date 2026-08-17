@@ -20,7 +20,7 @@ end
 -- nvim-treesitter install its own (older) parsers for these shadows the bundled
 -- ones on the rtp, so its stale parser gets paired with the built-in query set
 -- above -> node-type mismatches (e.g. "vim" parser missing the "tab" node).
--- Keep nvim-treesitter's hands off these: never install, always ignore.
+-- Keep nvim-treesitter's hands off these: never install them.
 local builtin_set = {}
 for _, lang in ipairs(builtin_langs) do builtin_set[lang] = true end
 
@@ -35,14 +35,34 @@ for _, lang in ipairs(want) do
   if not builtin_set[lang] then table.insert(ensure, lang) end
 end
 
-local ignore = { 'javascript' }
-for _, lang in ipairs(builtin_langs) do table.insert(ignore, lang) end
+-- nvim-treesitter's `main` branch dropped the `nvim-treesitter.configs` module
+-- along with ensure_installed/auto_install/ignore_install/highlight. Parsers are
+-- now installed explicitly via require('nvim-treesitter').install(); highlight is
+-- Neovim's own vim.treesitter.start().
+local ts = require('nvim-treesitter')
 
-require'nvim-treesitter.configs'.setup {
-  ensure_installed = ensure,
-  auto_install = true,
-  ignore_install = ignore,
-  highlight = {
-    enable = false, -- nvim-treesitter highlight unsupported on Neovim 0.12+; built-in handles it
-  },
-}
+-- install() re-fetches unconditionally, so only ask for what's actually missing.
+local have = {}
+for _, lang in ipairs(ts.get_installed('parsers')) do have[lang] = true end
+
+local missing = {}
+for _, lang in ipairs(ensure) do
+  if not have[lang] and not builtin_set[lang] then table.insert(missing, lang) end
+end
+
+if #missing > 0 then
+  -- The `main` branch shells out to the tree-sitter CLI to build grammars. Without
+  -- it every parser downloads, fails to compile, and is retried on the next
+  -- startup -- an endless "Downloading tree-sitter-x..." loop. Say so once instead.
+  if vim.fn.executable('tree-sitter') == 0 then
+    vim.schedule(function()
+      vim.notify(
+        'nvim-treesitter: tree-sitter CLI not found, skipping install of '
+          .. #missing .. ' parser(s). Install it with: pacman -S tree-sitter-cli',
+        vim.log.levels.WARN
+      )
+    end)
+  else
+    ts.install(missing)
+  end
+end
