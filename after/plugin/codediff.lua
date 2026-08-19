@@ -10,6 +10,7 @@ require("codediff").setup({
 -- CodeDiff keymaps (fugitive's own git commands live in after/plugin/fugitive.lua)
 vim.keymap.set("n", "<leader>gd", "<Cmd>CodeDiff<CR>", { desc = "Diff (all changes, changeset view)" })
 vim.keymap.set("n", "<leader>gf", "<Cmd>CodeDiff history HEAD~50 %<CR>", { desc = "File history" })
+vim.keymap.set("n", "<leader>gh", "<Cmd>CodeDiff history<CR>", { desc = "[G]it [H]istory (repo commits)" })
 
 -- PR-style compare: interactive prompt for branches/commits
 vim.keymap.set("n", "<leader>gC", function()
