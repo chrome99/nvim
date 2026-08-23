@@ -119,3 +119,29 @@ vim.api.nvim_create_autocmd("FileType", {
     })
   end,
 })
+
+-- Scratch buffers that live in /tmp but whose contents refer to the directory
+-- you launched the editor from: Claude Code's Ctrl-G prompt file, and zsh's
+-- edit-command-line buffer. Make cmp-path complete against nvim's cwd instead
+-- of the buffer's own directory.
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = { "/tmp/claude-*/claude-prompt-*.md", "/tmp/zsh*.zsh" },
+  callback = function()
+    cmp.setup.buffer({
+      sources = {
+        { name = "nvim_lsp" },
+        { name = "luasnip" },
+        { name = "emoji" },
+        { name = "buffer" },
+        {
+          name = "path",
+          option = {
+            get_cwd = function()
+              return vim.fn.getcwd()
+            end,
+          },
+        },
+      },
+    })
+  end,
+})
