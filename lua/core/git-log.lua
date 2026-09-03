@@ -27,8 +27,16 @@ local config = {
     yank_message = "ym",
     yank_hash = "yh",
     preview = "<CR>",
+    read = "r",
+    stop_reading = "s",
   },
   git_command = "git log --pretty=format:'%h|%d|%s|%cr' --abbrev-commit --date=relative",
+  -- Read the commit aloud (terminal-tts). Voice/speed live in
+  -- ~/.config/terminal-tts/config; these are just the commands.
+  tts = {
+    read_cmd = vim.fn.expand("~/.local/bin/read-text"),
+    stop_cmd = vim.fn.expand("~/.local/bin/stop-reading"),
+  },
 }
 
 function M.setup(user_config)
@@ -57,6 +65,67 @@ local function yank(what)
   vim.notify("󰅍 Yanked " .. what .. ": " .. content, vim.log.levels.INFO, { timeout = 2000 })
 end
 
+-- Full commit message for a hash: subject, body, and a short attribution
+-- header. Deliberately no diff -- this view is for reading, not reviewing.
+local function commit_message(hash)
+  local out = vim.fn.systemlist({
+    "git", "show", "-s", "--format=%s%n%n%b", hash,
+  })
+  if vim.v.shell_error ~= 0 then
+    return nil
+  end
+  -- Trim trailing blank lines left by commits with no body.
+  while #out > 0 and out[#out]:match("^%s*$") do
+    table.remove(out)
+  end
+  return out
+end
+
+-- Author plus both readings of the commit time: relative ("2 hours ago") for
+-- the sense of when, absolute with the clock time for the record.
+local function commit_meta(hash)
+  local out = vim.fn.systemlist({
+    "git", "show", "-s", "--format=%an|%ar|%ad", "--date=format:%-d %b %Y %H:%M", hash,
+  })
+  local author, rel, abs = (out[1] or ""):match("^(.-)|(.-)|(.*)$")
+  return author or "", rel or "", abs or ""
+end
+
+-- Body only -- not the subject, and not the hash, author or date. All of those
+-- are already on screen in front of you; the body is the part worth hearing.
+local function spoken_commit(commit)
+  local out = vim.fn.systemlist({ "git", "show", "-s", "--format=%b", commit.hash })
+  if vim.v.shell_error ~= 0 then
+    return nil
+  end
+  while #out > 0 and out[#out]:match("^%s*$") do
+    table.remove(out)
+  end
+  if #out == 0 then
+    return nil -- a subject-only commit has nothing to read
+  end
+  return table.concat(out, "\n")
+end
+
+local function read_commit()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  local commit = state.commits[lnum]
+  if not commit then
+    return
+  end
+  local text = spoken_commit(commit)
+  if not text then
+    vim.notify("Failed to read commit", vim.log.levels.ERROR)
+    return
+  end
+  highlight_line_briefly(lnum)
+  vim.system({ config.tts.read_cmd }, { stdin = text })
+end
+
+local function stop_reading()
+  vim.system({ config.tts.stop_cmd })
+end
+
 local function show_commit_preview()
   local lnum = vim.api.nvim_win_get_cursor(0)[1]
   local commit = state.commits[lnum]
@@ -69,42 +138,35 @@ local function show_commit_preview()
     state.preview_win = nil
   end
 
-  local git_show_cmd = "git show " .. commit.hash
-  local output = vim.fn.systemlist(git_show_cmd)
-
-  if vim.v.shell_error ~= 0 then
+  local message = commit_message(commit.hash)
+  if not message then
     vim.notify("Failed to get commit details", vim.log.levels.ERROR)
     return
   end
 
-  local width = math.floor(vim.o.columns * 0.8)
-  local height = math.floor(vim.o.lines * 0.8)
+  local author, rel, abs = commit_meta(commit.hash)
+  local output = { author .. "  ·  " .. rel .. "  ·  " .. abs, "" }
+  vim.list_extend(output, message)
+
+  -- Narrower than the log window: prose is easier to follow in a short measure.
+  local width = math.min(math.floor(vim.o.columns * 0.6), 80)
+  local height = math.floor(vim.o.lines * 0.6)
   local row = math.floor((vim.o.lines - height) / 2)
   local col = math.floor((vim.o.columns - width) / 2)
 
   state.preview_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(state.preview_buf, "bufhidden", "hide")
-  vim.api.nvim_buf_set_option(state.preview_buf, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(state.preview_buf, "filetype", "diff")
+  vim.bo[state.preview_buf].bufhidden = "wipe"
+  vim.bo[state.preview_buf].buftype = "nofile"
+  vim.bo[state.preview_buf].filetype = "gitcommit"
 
   vim.api.nvim_buf_set_lines(state.preview_buf, 0, -1, false, output)
-  vim.api.nvim_buf_set_option(state.preview_buf, "modifiable", false)
+  vim.bo[state.preview_buf].modifiable = false
 
-  -- Apply syntax highlighting for commit header
   local ns = vim.api.nvim_create_namespace("git_show_preview")
-  vim.api.nvim_set_hl(0, "GitShowCommit", { fg = "#eed49f" })
   vim.api.nvim_set_hl(0, "GitShowAuthor", { fg = "#8aadf4" })
-  vim.api.nvim_set_hl(0, "GitShowDate", { fg = "#8bd5ca" })
-
-  for i, line in ipairs(output) do
-    if line:match("^commit ") then
-      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowCommit", i - 1, 0, -1)
-    elseif line:match("^Author: ") then
-      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowAuthor", i - 1, 0, -1)
-    elseif line:match("^Date: ") then
-      vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowDate", i - 1, 0, -1)
-    end
-  end
+  vim.api.nvim_set_hl(0, "GitShowSubject", { fg = "#eed49f", bold = true })
+  vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowAuthor", 0, 0, -1)
+  vim.api.nvim_buf_add_highlight(state.preview_buf, ns, "GitShowSubject", 2, 0, -1)
 
   state.preview_win = vim.api.nvim_open_win(state.preview_buf, true, {
     relative = "editor",
@@ -114,27 +176,39 @@ local function show_commit_preview()
     col = col,
     style = "minimal",
     border = config.window.border,
-    title = " 󰊢 Commit " .. commit.hash .. " ",
+    title = " 󰊢 " .. commit.hash .. " ",
     title_pos = "center",
   })
 
   vim.api.nvim_win_set_option(state.preview_win, "winhl", "FloatBorder:GitLogBorder,FloatTitle:GitLogTitle")
-  vim.api.nvim_win_set_option(state.preview_win, "relativenumber", true)
-  vim.api.nvim_win_set_option(state.preview_win, "number", true)
+  -- Wrapped prose, no line numbers: this is something to read, not to navigate.
+  vim.wo[state.preview_win].wrap = true
+  vim.wo[state.preview_win].linebreak = true
+  vim.wo[state.preview_win].breakindent = true
+  vim.wo[state.preview_win].number = false
+  vim.wo[state.preview_win].relativenumber = false
 
-  vim.keymap.set("n", "q", function()
+  local function close_preview()
     if state.preview_win and vim.api.nvim_win_is_valid(state.preview_win) then
       vim.api.nvim_win_close(state.preview_win, true)
       state.preview_win = nil
     end
-  end, { buffer = state.preview_buf, silent = true })
+  end
 
-  vim.keymap.set("n", "<Esc>", function()
-    if state.preview_win and vim.api.nvim_win_is_valid(state.preview_win) then
-      vim.api.nvim_win_close(state.preview_win, true)
-      state.preview_win = nil
+  for _, key in ipairs({ "q", "<Esc>" }) do
+    vim.keymap.set("n", key, close_preview, { buffer = state.preview_buf, silent = true })
+  end
+
+  -- Same read/stop keys as the log list, so the muscle memory carries over.
+  vim.keymap.set("n", config.keymaps.read, function()
+    local text = spoken_commit(commit)
+    if text then
+      vim.system({ config.tts.read_cmd }, { stdin = text })
     end
-  end, { buffer = state.preview_buf, silent = true })
+  end, { buffer = state.preview_buf, silent = true, desc = "Read commit aloud" })
+
+  vim.keymap.set("n", config.keymaps.stop_reading, stop_reading,
+    { buffer = state.preview_buf, silent = true, desc = "Stop reading" })
 end
 
 local function setup_keymaps()
@@ -155,7 +229,9 @@ local function setup_keymaps()
   map(config.keymaps.yank_hash, function()
     yank("hash")
   end, "Yank commit hash")
-  map(config.keymaps.preview, show_commit_preview, "Show commit preview")
+  map(config.keymaps.preview, show_commit_preview, "Show commit message")
+  map(config.keymaps.read, read_commit, "Read commit aloud")
+  map(config.keymaps.stop_reading, stop_reading, "Stop reading")
 end
 
 local function fetch_and_display_log()
