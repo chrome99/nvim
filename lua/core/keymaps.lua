@@ -11,8 +11,32 @@ local opts = { noremap = true, silent = true }
 -- Save file
 vim.keymap.set("n", "<C-s>", "<cmd> w <CR>", opts)
 
+-- Write the buffer first when it is backed by a real file; use :q!/:bd! to discard
+local function save_if_named()
+	if vim.bo.modified and vim.bo.buftype == "" and vim.api.nvim_buf_get_name(0) ~= "" then
+		vim.cmd("write")
+		return true
+	end
+	return false
+end
+
+-- Nothing on disk to write to, so keep the contents reachable before discarding
+local function stash_unsaved()
+	if vim.bo.modified then
+		vim.fn.setreg("+", table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"))
+		vim.api.nvim_echo({ { "Unsaved buffer copied to clipboard", "None" } }, false, {})
+	end
+end
+
 -- Quit file
-vim.keymap.set("n", "<C-q>", "<cmd> q <CR>", opts)
+vim.keymap.set("n", "<C-q>", function()
+	if save_if_named() then
+		vim.cmd("quit")
+	else
+		stash_unsaved()
+		vim.cmd("quit!")
+	end
+end, opts)
 
 -- Find and center
 vim.keymap.set("n", "n", "nzzzv", opts)
@@ -21,7 +45,12 @@ vim.keymap.set("n", "N", "Nzzzv", opts)
 -- Buffers
 vim.keymap.set("n", "<Tab>", ":bnext<CR>", opts)
 vim.keymap.set("n", "<S-Tab>", ":bprevious<CR>", opts)
-vim.keymap.set("n", "<leader>bd", ":BufDel!<CR>", { desc = "[B]uffer [D]elete" })
+vim.keymap.set("n", "<leader>bd", function()
+	if not save_if_named() then
+		stash_unsaved()
+	end
+	vim.cmd("BufDel!")
+end, { desc = "[B]uffer [D]elete" })
 vim.keymap.set("n", "<leader>bn", "<cmd>enew<CR>", { desc = "[B]uffer [N]ew" })
 -- vim.keymap.set("n", "<leader>bp", ":BufferLinePick<CR>", { desc = "[B]uffer [P]ick" })
 vim.keymap.set("n", "<leader>j", ":BufferLinePick<CR>", { desc = "Jump Buffers" })
