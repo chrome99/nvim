@@ -83,15 +83,6 @@ return require("packer").startup(function(use)
   -- Quick buffer deletion
   use({ "ojroques/nvim-bufdel" })
 
-  -- Auto-pairs (e.g. brackets, quotes)
-  use({
-    "windwp/nvim-autopairs",
-    event = "InsertEnter",
-    config = function()
-      require("nvim-autopairs").setup({})
-    end,
-  })
-
   -- Surround
   use({
     "kylechui/nvim-surround",
