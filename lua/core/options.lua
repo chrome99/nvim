@@ -21,6 +21,9 @@ vim.opt.whichwrap:append("<,>,h,l")
 vim.opt.number = true
 vim.wo.relativenumber = true
 
+-- Highlight the line the cursor is on
+vim.opt.cursorline = true
+
 -- Sync clipboard
 vim.o.clipboard = "unnamedplus"
 

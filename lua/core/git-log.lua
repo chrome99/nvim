@@ -300,6 +300,7 @@ local function create_window_and_buffer()
 
   vim.api.nvim_win_set_option(state.win, "winhl", "FloatBorder:GitLogBorder,FloatTitle:GitLogTitle")
   vim.api.nvim_win_set_option(state.win, "relativenumber", true)
+  vim.api.nvim_win_set_option(state.win, "cursorline", true)
 end
 
 function M.toggle_git_log()

@@ -121,6 +121,7 @@ local function create_floating_window(opts)
   vim.api.nvim_win_set_option(win, "concealcursor", "niv")
   vim.api.nvim_win_set_option(win, "number", true)
   vim.api.nvim_win_set_option(win, "relativenumber", true)
+  vim.api.nvim_win_set_option(win, "cursorline", true)
   vim.api.nvim_win_set_option(win, "wrap", true)
 
   vim.api.nvim_buf_set_option(buf, "shiftwidth", 2)
