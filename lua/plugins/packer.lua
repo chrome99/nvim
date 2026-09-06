@@ -147,7 +147,7 @@ return require("packer").startup(function(use)
   -- Telescope
   use({
     "nvim-telescope/telescope.nvim",
-    tag = "0.1.8",
+    tag = "v0.2.2",
     requires = {
       "nvim-lua/plenary.nvim",
       { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
