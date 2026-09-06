@@ -108,4 +108,41 @@ vim.keymap.set("n", "<leader>li", function()
   M.insert_in_progress()
 end, { desc = "Insert Linear in-progress" })
 
+local workspace, prefix = string.match(os.getenv("LINEAR_PROJECT") or "", "^(.+)/(.+)$")
+
+-- The issue key under the cursor, e.g. "ABC-1", or nil if the cursor is not on one.
+local function issue_key_under_cursor()
+  local line = vim.api.nvim_get_current_line()
+  local cursor = vim.api.nvim_win_get_cursor(0)[2] + 1
+  local search_from = 1
+
+  while true do
+    local first, last = line:find(prefix .. "%-%d+", search_from)
+    if not first then
+      return nil
+    end
+
+    local preceded_by_word = first > 1 and line:sub(first - 1, first - 1):match("[%w_]")
+    local under_cursor = cursor >= first and cursor <= last
+    if under_cursor and not preceded_by_word then
+      return line:sub(first, last)
+    end
+
+    search_from = first + 1
+  end
+end
+
+if workspace and prefix then
+  local open_under_cursor = vim.fn.maparg("gx", "n", false, true).callback
+
+  vim.keymap.set("n", "gx", function()
+    local key = issue_key_under_cursor()
+    if key then
+      vim.ui.open(("https://linear.app/%s/issue/%s"):format(workspace, key))
+    else
+      open_under_cursor()
+    end
+  end, { desc = "Open Linear issue or URL under cursor" })
+end
+
 return M
