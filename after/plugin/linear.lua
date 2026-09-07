@@ -132,6 +132,132 @@ local function issue_key_under_cursor()
   end
 end
 
+-- Everything the hover float shows about an issue, keyed by issue key so a
+-- second hover on the same key never hits the network again.
+local issue_cache = {}
+
+local HOVER_QUERY = [[
+query Issue($id: String!) {
+  issue(id: $id) {
+    identifier
+    title
+    state { name }
+    assignee { displayName }
+    priorityLabel
+    labels { nodes { name } }
+    description
+  }
+}]]
+
+-- Fetch an issue in the background and hand it to `callback` on the main loop,
+-- or nil if it could not be fetched.
+local function fetch_issue(key, callback)
+  local api_key = vim.fn.getenv("LINEAR_API_KEY")
+  if api_key == vim.NIL or api_key == "" then
+    return callback(nil, "Missing LINEAR_API_KEY")
+  end
+
+  local body = vim.json.encode({ query = HOVER_QUERY, variables = { id = key } })
+
+  vim.system({
+    "curl",
+    "-sS",
+    ENDPOINT,
+    "-H",
+    "Content-Type: application/json",
+    "-H",
+    "Accept: application/json",
+    "-H",
+    "Authorization: " .. api_key,
+    "-d",
+    body,
+  }, { text = true }, function(res)
+    local issue, err
+
+    if res.code ~= 0 then
+      err = ("curl exit %d: %s"):format(res.code, res.stderr)
+    else
+      -- luanil turns JSON nulls into nil, so absent fields read as absent
+      -- instead of as vim.NIL, which is truthy and blows up on index.
+      local ok, json = pcall(vim.json.decode, res.stdout, { luanil = { object = true } })
+      if not ok then
+        err = "Bad JSON from Linear"
+      elseif json.data and json.data.issue then
+        issue = json.data.issue
+        issue_cache[key] = issue
+      else
+        -- Say what Linear said. A key the token cannot see reads the same as
+        -- a typo, and an expired token says so outright; neither is worth
+        -- flattening into "not found".
+        err = json.errors and json.errors[1] and json.errors[1].message or "not found"
+      end
+    end
+
+    vim.schedule(function()
+      callback(issue, err)
+    end)
+  end)
+end
+
+-- The issue as markdown lines: a title line, a metadata line, then the body.
+local function issue_markdown(issue)
+  local lines = { ("**%s** — %s"):format(issue.identifier, issue.title), "" }
+
+  local meta = {}
+  if issue.state then
+    table.insert(meta, issue.state.name)
+  end
+  table.insert(meta, issue.assignee and issue.assignee.displayName or "Unassigned")
+  if issue.priorityLabel then
+    table.insert(meta, issue.priorityLabel)
+  end
+  for _, label in ipairs(issue.labels and issue.labels.nodes or {}) do
+    table.insert(meta, label.name)
+  end
+  table.insert(lines, table.concat(meta, "  ·  "))
+
+  if issue.description and issue.description ~= "" then
+    table.insert(lines, "")
+    vim.list_extend(lines, vim.split(issue.description, "\n", { plain = true }))
+  end
+
+  return lines
+end
+
+local function float(lines)
+  local _, win = vim.lsp.util.open_floating_preview(lines, "markdown", {
+    border = "rounded",
+    max_width = 80,
+    max_height = 24,
+  })
+  return win
+end
+
+-- The issue in a real buffer, for a ticket too long to read in a float. It is
+-- a scratch buffer named after the key, so a second visit reuses it and gx on
+-- the issue links inside it opens them in the browser.
+local function open_buffer(issue)
+  local name = "linear://" .. issue.identifier
+  local buf = vim.fn.bufnr(name)
+
+  if buf == -1 then
+    buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_name(buf, name)
+    vim.bo[buf].buftype = "nofile"
+    vim.bo[buf].bufhidden = "hide"
+    vim.bo[buf].swapfile = false
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, issue_markdown(issue))
+    vim.bo[buf].modifiable = false
+    vim.bo[buf].filetype = "markdown"
+    vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, desc = "Close Linear issue" })
+  end
+
+  vim.cmd("botright vsplit")
+  vim.api.nvim_win_set_buf(0, buf)
+  vim.api.nvim_win_set_width(0, 84)
+  vim.wo.wrap = true
+end
+
 if workspace and prefix then
   local open_under_cursor = vim.fn.maparg("gx", "n", false, true).callback
 
@@ -143,6 +269,54 @@ if workspace and prefix then
       open_under_cursor()
     end
   end, { desc = "Open Linear issue or URL under cursor" })
+
+  local hover_under_cursor = vim.fn.maparg("K", "n", false, true).callback
+
+  -- The float currently on screen, so a second K on the same key can promote
+  -- it to a buffer rather than redrawing the same float.
+  local shown_win, shown_key
+
+  local function show(issue)
+    shown_key, shown_win = issue.identifier, float(issue_markdown(issue))
+  end
+
+  vim.keymap.set("n", "K", function()
+    local key = issue_key_under_cursor()
+    if not key then
+      if hover_under_cursor then
+        return hover_under_cursor()
+      end
+      return vim.cmd("normal! K")
+    end
+
+    if shown_key == key and shown_win and vim.api.nvim_win_is_valid(shown_win) then
+      vim.api.nvim_win_close(shown_win, true)
+      shown_win = nil
+      return open_buffer(issue_cache[key])
+    end
+
+    local cached = issue_cache[key]
+    if cached then
+      return show(cached)
+    end
+
+    local loading = float({ ("Loading %s…"):format(key) })
+
+    fetch_issue(key, function(issue, err)
+      if loading and vim.api.nvim_win_is_valid(loading) then
+        vim.api.nvim_win_close(loading, true)
+      end
+      -- The cursor may have wandered off the key while curl was in flight.
+      if issue_key_under_cursor() ~= key then
+        return
+      end
+      if issue then
+        show(issue)
+      else
+        vim.notify(("%s: %s"):format(key, err or "not found"), vim.log.levels.WARN)
+      end
+    end)
+  end, { desc = "Hover Linear issue under cursor" })
 end
 
 return M
