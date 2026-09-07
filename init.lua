@@ -14,6 +14,7 @@ vim.g._ts_force_sync_parsing = true
 
 require("core.clipboard").setup()
 require("core.options")
+require("core.filetypes")
 require("core.keymaps")
 require("core.functions")
 require("core.term")
