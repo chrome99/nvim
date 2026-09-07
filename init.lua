@@ -12,6 +12,7 @@ vim.tbl_flatten = function(t) return vim.iter(t):flatten(math.huge):totable() en
 -- node:range() to appear nil in the decoration provider.
 vim.g._ts_force_sync_parsing = true
 
+require("core.clipboard").setup()
 require("core.options")
 require("core.keymaps")
 require("core.functions")
