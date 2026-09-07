@@ -124,6 +124,18 @@ vim.keymap.set("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<
 vim.keymap.set("n", "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", { desc = "Quickfix" })
 vim.keymap.set("n", "<leader>xr", "<cmd>Trouble lsp_references toggle<CR>", { desc = "References" })
 
+-- Walk the quickfix list from any window, wrapping at either end
+local function qf_step(forward)
+	return function()
+		local ok = pcall(vim.cmd, forward and "cnext" or "cprev")
+		if not ok then
+			pcall(vim.cmd, forward and "cfirst" or "clast")
+		end
+	end
+end
+vim.keymap.set("n", "]q", qf_step(true), { desc = "Next quickfix entry" })
+vim.keymap.set("n", "[q", qf_step(false), { desc = "Previous quickfix entry" })
+
 -- Copy file itself to clipboard (paste as file in Finder/etc)
 vim.keymap.set("n", "<leader>ya", function()
 	local path = vim.fn.expand("%:p")

@@ -270,8 +270,6 @@ if workspace and prefix then
     end
   end, { desc = "Open Linear issue or URL under cursor" })
 
-  local hover_under_cursor = vim.fn.maparg("K", "n", false, true).callback
-
   -- The float currently on screen, so a second K on the same key can promote
   -- it to a buffer rather than redrawing the same float.
   local shown_win, shown_key
@@ -283,8 +281,8 @@ if workspace and prefix then
   vim.keymap.set("n", "K", function()
     local key = issue_key_under_cursor()
     if not key then
-      if hover_under_cursor then
-        return hover_under_cursor()
+      if next(vim.lsp.get_clients({ bufnr = 0, method = "textDocument/hover" })) then
+        return vim.lsp.buf.hover()
       end
       return vim.cmd("normal! K")
     end

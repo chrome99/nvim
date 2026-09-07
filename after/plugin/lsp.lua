@@ -1,7 +1,18 @@
 -- Ensure lspconfig.util is available
 local util = require("lspconfig.util")
 
+-- Nvim's built-in gr* LSP maps (grr, grn, gra, gri, grt, grx) turn `gr` into a
+-- prefix, so plain `gr` stalls for 'timeoutlen' before firing. Drop them.
+local function drop_default_gr_maps()
+	for _, lhs in ipairs({ "grr", "grn", "gri", "grt", "grx" }) do
+		pcall(vim.keymap.del, "n", lhs)
+	end
+	pcall(vim.keymap.del, { "n", "x" }, "gra")
+end
+
 local function setup_lsp()
+	drop_default_gr_maps()
+
 	-- LSP Attach Autocommand
 	vim.api.nvim_create_autocmd("LspAttach", {
 		group = vim.api.nvim_create_augroup("kickstart-lsp-attach", { clear = true }),
@@ -13,6 +24,14 @@ local function setup_lsp()
 
 			map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
 			map("gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
+			map("gR", function()
+				vim.lsp.buf.references(nil, {
+					on_list = function(list)
+						vim.fn.setqflist({}, " ", list)
+						vim.cmd.copen()
+					end,
+				})
+			end, "[G]oto [R]eferences (quickfix)")
 			map("gI", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
 			map("<leader>D", require("telescope.builtin").lsp_type_definitions, "Type [D]efinition")
 			map("<leader>ds", require("telescope.builtin").lsp_document_symbols, "[D]ocument [S]ymbols")
@@ -169,17 +188,13 @@ local function setup_lsp()
 		vim.notify("Mason LSPConfig not found!", vim.log.levels.ERROR)
 		return
 	end
-	mason_lspconfig.setup({
-		handlers = {
-			function(server_name)
-				local server_opts = servers[server_name] or {}
-				-- Ensure capabilities are merged correctly
-				server_opts.capabilities =
-					vim.tbl_deep_extend("force", {}, capabilities, server_opts.capabilities or {})
-				require("lspconfig")[server_name].setup(server_opts)
-			end,
-		},
-	})
+	mason_lspconfig.setup({ automatic_enable = false })
+
+	for server_name, server_opts in pairs(servers) do
+		server_opts.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server_opts.capabilities or {})
+		vim.lsp.config(server_name, server_opts)
+	end
+	vim.lsp.enable(vim.tbl_keys(servers))
 end
 
 setup_lsp()
