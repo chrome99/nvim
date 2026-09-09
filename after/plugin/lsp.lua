@@ -20,7 +20,15 @@ local function setup_lsp()
 			end
 
 			map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
-			map("gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
+			map("gr", function()
+				local builtin = require("telescope.builtin")
+				for _, c in ipairs(vim.lsp.get_clients({ bufnr = event.buf })) do
+					if c:supports_method("textDocument/references", event.buf) then
+						return builtin.lsp_references()
+					end
+				end
+				builtin.grep_string()
+			end, "[G]oto [R]eferences")
 			map("gR", function()
 				vim.lsp.buf.references(nil, {
 					on_list = function(list)
