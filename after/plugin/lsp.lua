@@ -1,6 +1,3 @@
--- Ensure lspconfig.util is available
-local util = require("lspconfig.util")
-
 -- Nvim's built-in gr* LSP maps (grr, grn, gra, gri, grt, grx) turn `gr` into a
 -- prefix, so plain `gr` stalls for 'timeoutlen' before firing. Drop them.
 local function drop_default_gr_maps()
@@ -76,7 +73,6 @@ local function setup_lsp()
 	-- LSP server configs (lspconfig names)
 	local servers = {
 		vtsls = {
-			root_dir = util.root_pattern("tsconfig.json", "package.json", ".git"),
 			settings = {
 				typescript = {
 					inlayHints = {
