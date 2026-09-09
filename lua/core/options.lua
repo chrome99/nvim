@@ -14,6 +14,14 @@ vim.opt.expandtab = true
 vim.opt.wrap = false
 vim.o.linebreak = true
 
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "text", "gitcommit", "rst", "asciidoc", "tex", "plaintex", "mail", "org", "typst" },
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.breakindent = true
+  end,
+})
+
 -- Cursor wrap behavior
 vim.opt.whichwrap:append("<,>,h,l")
 
