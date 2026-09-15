@@ -31,6 +31,13 @@ local config = {
     stop_reading = "s",
   },
   git_command = "git log --pretty=format:'%h|%d|%s|%cr' --abbrev-commit --date=relative",
+  ci_icons = {
+    SUCCESS = "\u{f00c}",
+    PENDING = "\u{f017}",
+    EXPECTED = "\u{f017}",
+    FAILURE = "\u{f00d}",
+    ERROR = "\u{f071}",
+  },
   -- Read the commit aloud (terminal-tts). Voice/speed live in
   -- ~/.config/terminal-tts/config; these are just the commands.
   tts = {
@@ -303,6 +310,37 @@ local function create_window_and_buffer()
   vim.api.nvim_win_set_option(state.win, "cursorline", true)
 end
 
+local CI_ROLLUP_QUERY = [[
+query($owner: String!, $repo: String!, $sha: GitObjectID!) {
+  repository(owner: $owner, name: $repo) {
+    object(oid: $sha) { ... on Commit { statusCheckRollup { state } } }
+  }
+}]]
+
+--- Appends HEAD's GitHub CI state to the log window title. Leaves the title
+--- alone when there is no GitHub remote, HEAD is unpushed, or it has no checks.
+local function show_ci_status_in_title()
+  local win = state.win
+  local sha = vim.trim(vim.fn.system("git rev-parse HEAD"))
+  vim.system({
+    "gh", "api", "graphql",
+    "-F", "owner={owner}",
+    "-F", "repo={repo}",
+    "-F", "sha=" .. sha,
+    "-f", "query=" .. CI_ROLLUP_QUERY,
+    "--jq", '.data.repository.object.statusCheckRollup.state // ""',
+  }, { text = true }, vim.schedule_wrap(function(result)
+    local icon = result.code == 0 and config.ci_icons[vim.trim(result.stdout)]
+    if not icon or not vim.api.nvim_win_is_valid(win) then
+      return
+    end
+    vim.api.nvim_win_set_config(win, {
+      title = config.window.title .. icon .. " ",
+      title_pos = "center",
+    })
+  end))
+end
+
 function M.toggle_git_log()
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     vim.api.nvim_win_close(state.win, true)
@@ -318,6 +356,7 @@ function M.toggle_git_log()
   create_window_and_buffer()
   setup_keymaps()
   fetch_and_display_log()
+  show_ci_status_in_title()
 end
 
 return M
