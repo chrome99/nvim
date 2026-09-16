@@ -208,13 +208,7 @@ return require("packer").startup(function(use)
   use({ "MeanderingProgrammer/render-markdown.nvim" })
 
   -- Markdown Preview
-  use({
-    "iamcco/markdown-preview.nvim",
-    run = function()
-      vim.fn["mkdp#util#install"]()
-    end,
-    ft = { "markdown" },
-  })
+  use({ "brianhuster/live-preview.nvim" })
 
   -- Markdown Folding
   use({ "preservim/vim-markdown", requires = { "godlygeek/tabular" } })
