@@ -83,6 +83,9 @@ return require("packer").startup(function(use)
   -- Quick buffer deletion
   use({ "ojroques/nvim-bufdel" })
 
+  -- Close the oldest untouched buffers past a limit
+  use({ "axkirillov/hbac.nvim" })
+
   -- Surround
   use({
     "kylechui/nvim-surround",
@@ -216,15 +219,6 @@ return require("packer").startup(function(use)
   -- Share Buffers with Cursor
   use({ "vim-denops/denops.vim" })
   use({ "kbwo/vim-shareedit" })
-
-  -- Buffer line
-  use({
-    "akinsho/bufferline.nvim",
-    requires = {
-      "moll/vim-bbye",
-      "nvim-tree/nvim-web-devicons",
-    },
-  })
 
   -- Fugitive
   use("tpope/vim-fugitive")

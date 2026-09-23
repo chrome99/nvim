@@ -52,8 +52,6 @@ vim.keymap.set("n", "<leader>bd", function()
 	vim.cmd("BufDel!")
 end, { desc = "[B]uffer [D]elete" })
 vim.keymap.set("n", "<leader>bn", "<cmd>enew<CR>", { desc = "[B]uffer [N]ew" })
--- vim.keymap.set("n", "<leader>bp", ":BufferLinePick<CR>", { desc = "[B]uffer [P]ick" })
-vim.keymap.set("n", "<leader>j", ":BufferLinePick<CR>", { desc = "Jump Buffers" })
 vim.keymap.set("n", "<leader>bD", ":BufDelOther!<CR>", { desc = "[B]uffer [D]elete all others" })
 
 -- Resize with arrows
