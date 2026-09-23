@@ -222,7 +222,7 @@ return require("packer").startup(function(use)
   use("farhanmustar/fugitive-delta.nvim")
   -- Treesitter syntax colors inside fugitive diff hunks
   use({
-    "barrettruth/diffs.nvim",
+    "https://forge.barrettruth.com/barrettruth/diffs.nvim",
     config = function()
       vim.g.diffs = {
         integrations = {
