@@ -216,10 +216,6 @@ return require("packer").startup(function(use)
   -- Markdown Folding
   use({ "preservim/vim-markdown", requires = { "godlygeek/tabular" } })
 
-  -- Share Buffers with Cursor
-  use({ "vim-denops/denops.vim" })
-  use({ "kbwo/vim-shareedit" })
-
   -- Fugitive
   use("tpope/vim-fugitive")
   -- Delta intra-line word-diff highlights in fugitive diff buffers

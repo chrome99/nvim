@@ -1,6 +1,3 @@
--- Disable denops version check (nvim version behind requirement)
-vim.g.denops_disable_version_check = true
-
 vim.opt.shortmess:append("I")
 
 -- Indent with 4 spaces
