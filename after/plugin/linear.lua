@@ -95,7 +95,7 @@ function M.insert_in_progress(limit)
   local lines = {}
   for _, i in ipairs(issues) do
     local url_without_slug = i.url:gsub("[^/]*$", "")
-    table.insert(lines, ("- [%s](%s)"):format(i.identifier, url_without_slug))
+    table.insert(lines, ("- [ ] [%s](%s)"):format(i.identifier, url_without_slug))
   end
 
   -- insert at cursor (below)
