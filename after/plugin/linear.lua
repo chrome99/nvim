@@ -1,8 +1,7 @@
 -- linear.lua
 local M = {}
 
--- hardcode your email + default limit
-local EMAIL = "ezra@10play.dev"
+local EMAIL = os.getenv("LINEAR_EMAIL")
 local LIMIT = 10
 local ENDPOINT = "https://api.linear.app/graphql"
 
@@ -58,6 +57,10 @@ local function http(body)
 end
 
 function M.insert_in_progress(limit)
+  if not EMAIL or EMAIL == "" then
+    vim.notify("Missing LINEAR_EMAIL", vim.log.levels.ERROR)
+    return
+  end
   limit = tonumber(limit) or LIMIT
   local body = vim.json.encode({ query = QUERY, variables = { email = EMAIL, first = limit } })
   local out, err = http(body)
@@ -91,7 +94,8 @@ function M.insert_in_progress(limit)
 
   local lines = {}
   for _, i in ipairs(issues) do
-    table.insert(lines, ("- [ ] %s [%s](%s)"):format(i.title, i.identifier, i.url))
+    local url_without_slug = i.url:gsub("[^/]*$", "")
+    table.insert(lines, ("- [%s](%s)"):format(i.identifier, url_without_slug))
   end
 
   -- insert at cursor (below)
