@@ -29,6 +29,9 @@ vim.wo.relativenumber = true
 -- Highlight the line the cursor is on
 vim.opt.cursorline = true
 
+-- Hide the tab line, even when CodeDiff opens a tab
+vim.o.showtabline = 0
+
 -- Sync clipboard
 vim.o.clipboard = "unnamedplus"
 
