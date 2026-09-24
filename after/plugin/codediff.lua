@@ -29,6 +29,23 @@ vim.keymap.set("n", "<leader>gm", function()
   vim.cmd("CodeDiff " .. branch .. "...")
 end, { desc = "[G]it [M]ain (diff against main/master)" })
 
+-- Open history with nothing selected. Upstream's create selects the first
+-- commit's first file whenever the list it is handed has a commit in it, so
+-- hand it an empty list and fill the tree in afterwards.
+do
+  local history = require("codediff.ui.history")
+  local render = require("codediff.ui.history.render")
+  local create = history.create
+
+  history.create = function(data, tabpage, width)
+    local hist = create(vim.tbl_extend("force", data, { commits = {} }), tabpage, width)
+    hist.data = data
+    hist.tree:set_nodes(render.build_tree_nodes(data.commits, data.git_root, data.opts))
+    hist.tree:render()
+    return hist
+  end
+end
+
 -- Fix ]f/[f in repo history mode.
 --
 -- Upstream's history navigate_next/navigate_prev build their file list from
