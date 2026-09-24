@@ -63,9 +63,8 @@ end
 --
 -- Upstream's history navigate_next/navigate_prev build their file list from
 -- `get_all_files`, which only collects direct children of *expanded* commit
--- nodes. A freshly opened history view has exactly one commit expanded, so the
--- list holds that commit's files and nothing else: ]f cycles within the one
--- commit (usually a single file) and looks dead. It also misses files nested
+-- nodes. With no commit expanded ]f finds no file, and with one it cycles
+-- within that commit, so it looks dead. It also misses files nested
 -- under directory nodes in `history.view_mode = "tree"`.
 --
 -- Replace both with a walk over every commit, loading a collapsed commit's
@@ -157,8 +156,8 @@ do
 
       if node.data.files_loaded then
         land()
-      elseif hist._load_commit_files then
-        hist._load_commit_files(node, land)
+      elseif hist.load_commit_files then
+        hist.load_commit_files(node, land)
       else
         attempt(target)
       end
@@ -181,12 +180,12 @@ do
     -- Nothing selected yet: enter from the near end of the history.
     local current_index
     for i, node in ipairs(commits) do
-      if node.data.hash == hist.current_commit then
+      if node.data.hash == hist.data.current_commit then
         current_index = i
         break
       end
     end
-    if not current_index or not hist.current_file then
+    if not current_index or not hist.data.current_file then
       step_commit(hist, commits, direction > 0 and 0 or #commits + 1, direction)
       return
     end
@@ -194,7 +193,7 @@ do
     local files = commit_files(hist.tree, commits[current_index])
     local file_index
     for i, node in ipairs(files) do
-      if node.data.path == hist.current_file then
+      if node.data.path == hist.data.current_file then
         file_index = i
         break
       end
