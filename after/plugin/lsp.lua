@@ -124,6 +124,7 @@ local function setup_lsp()
 		sqlls = {},
 		terraformls = {},
 		svelte = {},
+		prismals = {},
 		lua_ls = {
 			settings = {
 				Lua = {
@@ -162,6 +163,7 @@ local function setup_lsp()
 		sqlls = "sqls",
 		terraformls = "terraform-ls",
 		svelte = "svelte-language-server",
+		prismals = "prisma-language-server",
 		lua_ls = "lua-language-server",
 	}
 

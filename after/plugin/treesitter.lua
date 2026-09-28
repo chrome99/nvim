@@ -28,7 +28,7 @@ local want = {
     'astro', 'python', 'lua', 'javascript', 'typescript', 'vimdoc', 'vim',
     'regex', 'terraform', 'sql', 'dockerfile', 'toml', 'json', 'go',
     'gitignore', 'yaml', 'make', 'cmake', 'markdown', 'markdown_inline',
-    'bash', 'tsx', 'css', 'html',
+    'bash', 'tsx', 'css', 'html', 'prisma',
 }
 local ensure = {}
 for _, lang in ipairs(want) do
@@ -66,3 +66,8 @@ if #missing > 0 then
     ts.install(missing)
   end
 end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'prisma',
+  callback = function(args) vim.treesitter.start(args.buf) end,
+})
