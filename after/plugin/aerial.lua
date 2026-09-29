@@ -9,6 +9,12 @@ require("aerial").setup({
   -- Auto-close aerial when jumping to a symbol
   close_on_select = false,
 
+  float = {
+    override = function(conf, source_winid)
+      return vim.w[source_winid].aerial_float or conf
+    end,
+  },
+
   -- Show box-drawing chars for tree structure
   show_guides = true,
 

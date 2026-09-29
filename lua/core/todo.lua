@@ -4,7 +4,10 @@ local state = {
     win = -1,
   },
   help_win = -1,
+  aerial_win = -1,
 }
+
+local AERIAL_WIDTH = 35
 
 local todo_file = vim.fn.stdpath("state") .. "/todo.md"
 local lock_file = vim.fn.stdpath("state") .. "/todo.lock"
@@ -175,9 +178,73 @@ local checkbox = require("core.checkbox")
 local toggle_checkbox = checkbox.toggle_checkbox
 local toggle_checkbox_range = checkbox.toggle_checkbox_range
 
+local function set_todo_width(width)
+  local config = vim.api.nvim_win_get_config(state.floating.win)
+  config.width = width
+  vim.api.nvim_win_set_config(state.floating.win, config)
+end
+
+local function close_aerial()
+  if vim.api.nvim_win_is_valid(state.aerial_win) then
+    vim.api.nvim_win_close(state.aerial_win, true)
+  end
+end
+
+--- Split the todo float so aerial takes its right side, keeping the outer footprint.
+local function open_aerial()
+  local todo_win = state.floating.win
+  local config = vim.api.nvim_win_get_config(todo_win)
+  local full_width = config.width
+  set_todo_width(full_width - AERIAL_WIDTH - 2)
+
+  local aerial_config = {
+    relative = "editor",
+    width = AERIAL_WIDTH,
+    height = config.height,
+    row = config.row,
+    col = config.col + full_width - AERIAL_WIDTH,
+    border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+    title = " Outline ",
+    title_pos = "center",
+  }
+  state.aerial_win = vim.api.nvim_open_win(
+    vim.api.nvim_create_buf(false, true),
+    true,
+    vim.tbl_extend("force", aerial_config, { style = "minimal" })
+  )
+  vim.api.nvim_win_set_option(state.aerial_win, "winhl", "FloatBorder:TodoBorder,FloatTitle:TodoTitle")
+  vim.w[todo_win].aerial_float = aerial_config
+  require("aerial").open_in_win(state.aerial_win, todo_win)
+  vim.api.nvim_win_set_option(state.aerial_win, "cursorline", true)
+  vim.keymap.set("n", "<C-h>", function()
+    vim.api.nvim_set_current_win(todo_win)
+  end, { buffer = vim.api.nvim_win_get_buf(state.aerial_win), silent = true, desc = "Focus todo" })
+
+  vim.api.nvim_create_autocmd("WinClosed", {
+    pattern = tostring(state.aerial_win),
+    once = true,
+    callback = function()
+      state.aerial_win = -1
+      if vim.api.nvim_win_is_valid(todo_win) then
+        vim.w[todo_win].aerial_float = nil
+        set_todo_width(full_width)
+      end
+    end,
+  })
+end
+
+local function toggle_aerial()
+  if vim.api.nvim_win_is_valid(state.aerial_win) then
+    close_aerial()
+  else
+    open_aerial()
+  end
+end
+
 local function close_todo(buf)
   save_todo_file(buf)
   release_lock()
+  close_aerial()
   if vim.api.nvim_win_is_valid(state.help_win) then
     vim.api.nvim_win_close(state.help_win, true)
     state.help_win = -1
@@ -250,6 +317,13 @@ local function setup_todo_keymaps(buf)
     go_to_file("tabedit")
   end, vim.tbl_extend("force", opts, { desc = "Close todo and go to file in new tab" }))
 
+  vim.keymap.set("n", "<leader>a", toggle_aerial, vim.tbl_extend("force", opts, { desc = "Toggle outline" }))
+  vim.keymap.set("n", "<C-l>", function()
+    if vim.api.nvim_win_is_valid(state.aerial_win) then
+      vim.api.nvim_set_current_win(state.aerial_win)
+    end
+  end, vim.tbl_extend("force", opts, { desc = "Focus outline" }))
+
   vim.keymap.set("n", "R", restore_todo, vim.tbl_extend("force", opts, { desc = "Restore todo from backup" }))
 
   vim.keymap.set("n", "?", function()
@@ -266,12 +340,13 @@ local function setup_todo_keymaps(buf)
         "gf - Close todo and go to file",
         "gF - Close todo and go to file in new tab",
         "R - Restore from backup",
+        "<leader>a - Toggle outline",
         "? - Toggle this help",
       }
       vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_content)
 
       local help_width = 38
-      local help_height = 8
+      local help_height = 9
       local help_row = math.floor((vim.o.lines - help_height) / 2)
       local help_col = math.floor((vim.o.columns - help_width) / 2)
 
