@@ -52,7 +52,7 @@ vim.keymap.set("n", "<leader>bd", function()
 	vim.cmd("BufDel!")
 end, { desc = "[B]uffer [D]elete" })
 vim.keymap.set("n", "<leader>bn", "<cmd>enew<CR>", { desc = "[B]uffer [N]ew" })
-vim.keymap.set("n", "<leader>bD", ":BufDelOther!<CR>", { desc = "[B]uffer [D]elete all others" })
+vim.keymap.set("n", "<leader>bD", "<cmd>BufDelAll!<CR>", { desc = "[B]uffer [D]elete all" })
 
 -- Resize with arrows
 vim.keymap.set("n", "<Up>", ":resize -2<CR>", opts)
