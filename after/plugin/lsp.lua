@@ -7,6 +7,51 @@ local function drop_default_gr_maps()
 	pcall(vim.keymap.del, { "n", "x" }, "gra")
 end
 
+-- Prints the repo's type-checking bar: "recommended" when its ruff config enforces
+-- annotations, "standard" when it configures a type checker, else "none".
+local REPO_TYPE_CHECKING_PY = [[
+import pathlib, sys, tomllib
+
+root = pathlib.Path(sys.argv[1])
+
+
+def load(name):
+    path = root / name
+    return tomllib.loads(path.read_text()) if path.is_file() else None
+
+
+tool = (load("pyproject.toml") or {}).get("tool", {})
+ruff = load("ruff.toml") or load(".ruff.toml") or tool.get("ruff", {})
+lint = ruff.get("lint", {})
+rules = [*ruff.get("select", []), *ruff.get("extend-select", []), *lint.get("select", []), *lint.get("extend-select", [])]
+checker_configs = ["pyrightconfig.json", "mypy.ini", ".mypy.ini"]
+if any(rule == "ALL" or rule.startswith("ANN") for rule in rules):
+    print("recommended")
+elif {"pyright", "basedpyright", "mypy"} & tool.keys() or any((root / name).is_file() for name in checker_configs):
+    print("standard")
+else:
+    print("none")
+]]
+
+--- Holds basedpyright to the bar of the repo at `config.root_dir`, so the editor
+--- reports only what the repo itself checks. A repo with no type checker gets no
+--- basedpyright diagnostics at all; hover, completion and navigation stay on.
+--- @param config vim.lsp.ClientConfig
+local function match_repo_type_checking(config)
+	local root = config.root_dir
+	if not root then
+		return
+	end
+	local result = vim.system({ "python3", "-c", REPO_TYPE_CHECKING_PY, root }, { text = true }):wait()
+	local bar = result.code == 0 and vim.trim(result.stdout) or "standard"
+	local analysis = config.settings.basedpyright.analysis
+	if bar == "none" then
+		analysis.ignore = { root }
+	else
+		analysis.typeCheckingMode = bar
+	end
+end
+
 local function setup_lsp()
 	drop_default_gr_maps()
 
@@ -103,12 +148,14 @@ local function setup_lsp()
 			settings = {
 				basedpyright = {
 					analysis = {
-						typeCheckingMode = "recommended", -- matches pyproject strict gate
 						autoSearchPaths = true,
 						useLibraryCodeForTypes = true,
 					},
 				},
 			},
+			before_init = function(_, config)
+				match_repo_type_checking(config)
+			end,
 		},
 		html = { filetypes = { "html", "twig", "hbs" } },
 		cssls = {},
