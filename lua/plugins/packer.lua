@@ -65,7 +65,7 @@ return require("packer").startup(function(use)
     },
   })
 
-  -- Git Signs (configured in after/plugin/gitsigns.lua)
+  -- Git Signs (configured in after/plugin/git/gitsigns.lua)
   use("lewis6991/gitsigns.nvim")
 
   -- Comment
