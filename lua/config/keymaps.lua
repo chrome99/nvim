@@ -100,7 +100,7 @@ vim.keymap.set("n", "L", "g_")
 
 -- Toggle "- [ ]" / "- [x]" checkboxes with Enter, anywhere (falls back to
 -- normal <CR> behavior when the line isn't a checkbox)
-local checkbox = require("core.checkbox")
+local checkbox = require("features.checkbox")
 vim.keymap.set("n", "<CR>", function()
 	if not checkbox.toggle_checkbox() then
 		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<CR>", true, false, true), "n", false)
@@ -110,7 +110,7 @@ vim.keymap.set("v", "<CR>", checkbox.toggle_checkbox_range, { desc = "Toggle che
 
 -- Git log floating window
 vim.keymap.set("n", "<leader>gl", function()
-	require("core.git-log").toggle_git_log()
+	require("features.git-log").toggle_git_log()
 end, { desc = "Toggle git log in floating window" })
 
 -- Focus floating window

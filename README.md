@@ -15,11 +15,11 @@ Personal Neovim config written in Lua.
 
 ## Custom Features
 
-#### [Git Log](lua/core/git-log.lua) — `<leader>gl`
+#### [Git Log](lua/features/git-log.lua) — `<leader>gl`
 
 Custom floating git log viewer. Shows commits with branch refs, subject, and relative timestamps — each field color-coded. Press `<CR>` on any commit to open a second floating window with the full `git show` diff (syntax highlighted). `yh` yanks the commit hash, `ym` yanks the commit message — both flash the line briefly as confirmation. `q` / `<Esc>` to close either window.
 
-#### [Todo Manager](lua/core/todo.lua) — `<Space>td`
+#### [Todo Manager](lua/features/todo.lua) — `<Space>td`
 
 Persistent floating markdown checklist, stored in Neovim's state directory. `<CR>` toggles a checkbox; visual-select multiple lines and `<CR>` toggles them all. `gf` / `gF` jump to file references in the list (supports `path:line:col` format). Backs up automatically once per day with 30-day retention — `R` opens a picker to restore from any backup. A lock file prevents two Neovim instances from editing it at the same time.
 

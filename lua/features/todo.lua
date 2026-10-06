@@ -174,7 +174,7 @@ local function save_todo_file(buf)
   vim.api.nvim_buf_set_option(buf, "modified", false)
 end
 
-local checkbox = require("core.checkbox")
+local checkbox = require("features.checkbox")
 local toggle_checkbox = checkbox.toggle_checkbox
 local toggle_checkbox_range = checkbox.toggle_checkbox_range
 
