@@ -409,21 +409,3 @@ vim.api.nvim_create_user_command("TodoRestore", restore_todo, {})
 vim.keymap.set("n", "<space>td", toggle_todo, { desc = "Toggle todo window" })
 
 backup_todo()
-
--- Yank current file path with line number
-vim.keymap.set("n", "<leader>yf", function()
-  local file_path = vim.fn.expand("%")
-  local line_num = vim.api.nvim_win_get_cursor(0)[1]
-  local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
-
-  local result
-  if git_root and git_root ~= "" then
-    local relative_path = vim.fn.fnamemodify(file_path, ":p"):gsub("^" .. git_root .. "/", "")
-    result = relative_path .. ":" .. line_num
-  else
-    result = vim.fn.fnamemodify(file_path, ":p") .. ":" .. line_num
-  end
-
-  vim.fn.setreg("+", result)
-  vim.notify("Yanked: " .. result)
-end, { desc = "Yank file path with line number" })

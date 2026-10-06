@@ -145,6 +145,24 @@ vim.keymap.set("n", "<leader>ya", function()
 	vim.notify("Copied file: " .. vim.fn.expand("%:t"), vim.log.levels.INFO)
 end, { desc = "Copy file to clipboard" })
 
+-- Yank current file path with line number
+vim.keymap.set("n", "<leader>yf", function()
+	local file_path = vim.fn.expand("%")
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+	local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+
+	local result
+	if git_root and git_root ~= "" then
+		local relative_path = vim.fn.fnamemodify(file_path, ":p"):gsub("^" .. git_root .. "/", "")
+		result = relative_path .. ":" .. line_num
+	else
+		result = vim.fn.fnamemodify(file_path, ":p") .. ":" .. line_num
+	end
+
+	vim.fn.setreg("+", result)
+	vim.notify("Yanked: " .. result)
+end, { desc = "Yank file path with line number" })
+
 -- Yank diagnostic message on current line
 vim.keymap.set("n", "<leader>yx", function()
 	local diags = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
