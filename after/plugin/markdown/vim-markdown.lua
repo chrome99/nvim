@@ -10,6 +10,7 @@ vim.api.nvim_create_autocmd("FileType", {
   callback = function()
     vim.opt_local.foldmethod = "expr"
     vim.opt_local.foldexpr = "GetMarkdownFold()"
+    vim.opt_local.comments:prepend("b:- [ ]")
 
     vim.keymap.set("n", "=", "za", { buffer = true, desc = "Toggle fold" })
 
