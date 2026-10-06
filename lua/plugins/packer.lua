@@ -186,7 +186,6 @@ return require("packer").startup(function(use)
     requires = {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
-      "3rd/image.nvim",
     },
   })
 
@@ -282,6 +281,4 @@ return require("packer").startup(function(use)
       })
     end,
   })
-
-  use("Root-lee/screensaver.nvim")
 end)
