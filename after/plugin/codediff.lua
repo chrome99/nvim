@@ -3,7 +3,11 @@ require("codediff").setup({
     layout = "inline",
   },
   explorer = {
+    view_mode = "tree",
     width = 27, -- 2/3 of default (40)
+  },
+  history = {
+    view_mode = "tree",
   },
 })
 

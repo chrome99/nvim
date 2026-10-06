@@ -236,21 +236,7 @@ return require("packer").startup(function(use)
   })
 
   -- CodeDiff (VSCode-style git diff viewer, side-by-side or inline)
-  use({
-    "esmuellert/codediff.nvim",
-    config = function()
-      require("codediff").setup({
-        explorer = {
-          position = "left",
-          view_mode = "tree",
-        },
-        history = {
-          position = "bottom",
-          view_mode = "tree",
-        },
-      })
-    end,
-  })
+  use("esmuellert/codediff.nvim")
 
   -- Database
   use("tpope/vim-dadbod")
