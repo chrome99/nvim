@@ -28,6 +28,7 @@ require("neo-tree").setup({
       event = "neo_tree_buffer_enter",
       handler = function()
         vim.opt_local.relativenumber = true
+        vim.opt_local.statusline = " "
       end,
     },
   },

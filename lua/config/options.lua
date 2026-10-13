@@ -32,6 +32,11 @@ vim.opt.cursorline = true
 -- Hide the tab line, even when CodeDiff opens a tab
 vim.o.showtabline = 0
 
+vim.o.laststatus = 0
+vim.o.statusline = "%f %m"
+vim.o.showmode = false
+vim.o.ruler = false
+
 -- Sync clipboard
 vim.o.clipboard = "unnamedplus"
 
