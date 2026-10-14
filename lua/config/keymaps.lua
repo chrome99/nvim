@@ -141,17 +141,12 @@ end, { desc = "Copy file to clipboard" })
 
 -- Yank current file path with line number
 vim.keymap.set("n", "<leader>yf", function()
-	local file_path = vim.fn.expand("%")
+	local file_path = vim.api.nvim_buf_get_name(0)
 	local line_num = vim.api.nvim_win_get_cursor(0)[1]
-	local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+	local git_root = vim.fs.root(0, ".git")
 
-	local result
-	if git_root and git_root ~= "" then
-		local relative_path = vim.fn.fnamemodify(file_path, ":p"):gsub("^" .. git_root .. "/", "")
-		result = relative_path .. ":" .. line_num
-	else
-		result = vim.fn.fnamemodify(file_path, ":p") .. ":" .. line_num
-	end
+	local display_path = git_root and vim.fs.relpath(git_root, file_path) or vim.fn.fnamemodify(file_path, ":~")
+	local result = display_path .. ":" .. line_num
 
 	vim.fn.setreg("+", result)
 	vim.notify("Yanked: " .. result)
