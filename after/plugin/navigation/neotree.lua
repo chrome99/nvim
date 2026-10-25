@@ -1,7 +1,7 @@
 local function folder_at_cursor(tree)
   local node = tree:get_node()
   if node.type ~= "directory" then
-    return tree:get_node(node:get_parent_id())
+    return (tree:get_node(node:get_parent_id()))
   end
   return node
 end
@@ -70,6 +70,10 @@ local function collapse_deepest_level(state)
   require("neo-tree.ui.renderer").redraw(state)
 end
 
+local function expand_all_levels(state)
+  require("neo-tree.sources.filesystem.commands").expand_all_nodes(state, folder_at_cursor(state.tree))
+end
+
 require("neo-tree").setup({
   close_if_last_window = true,
   filesystem = {
@@ -84,7 +88,7 @@ require("neo-tree").setup({
       ["z"] = "none",
       ["zr"] = expand_next_level,
       ["zm"] = collapse_deepest_level,
-      ["zR"] = "expand_all_subnodes",
+      ["zR"] = expand_all_levels,
       ["zM"] = "close_all_nodes",
       ["P"] = {
         "toggle_preview",
