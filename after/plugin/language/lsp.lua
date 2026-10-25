@@ -52,6 +52,25 @@ local function match_repo_type_checking(config)
 	end
 end
 
+--- Applies ruff's organize-imports edit before returning, so the format that
+--- follows runs on the sorted buffer instead of racing an async code action.
+--- @param client vim.lsp.Client
+--- @param bufnr integer
+local function organize_imports_sync(client, bufnr)
+	local params = vim.lsp.util.make_range_params(0, client.offset_encoding)
+	params.context = { only = { "source.organizeImports.ruff" }, diagnostics = {} }
+	local response = client:request_sync("textDocument/codeAction", params, 1000, bufnr)
+	for _, action in ipairs(response and response.result or {}) do
+		if not action.edit then
+			local resolved = client:request_sync("codeAction/resolve", action, 1000, bufnr)
+			action = resolved and resolved.result or action
+		end
+		if action.edit then
+			vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+		end
+	end
+end
+
 local function setup_lsp()
 	drop_default_gr_maps()
 
@@ -99,11 +118,8 @@ local function setup_lsp()
 					buffer = event.buf,
 					group = vim.api.nvim_create_augroup("RuffOnSave", { clear = false }),
 					callback = function()
-						vim.lsp.buf.code_action({
-							context = { only = { "source.organizeImports.ruff" }, diagnostics = {} },
-							apply = true,
-						})
-						vim.lsp.buf.format({ async = false, name = "ruff" })
+						organize_imports_sync(client, event.buf)
+						vim.lsp.buf.format({ async = false, name = "ruff", bufnr = event.buf })
 					end,
 				})
 			end
