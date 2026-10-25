@@ -102,7 +102,6 @@ require("neo-tree").setup({
     {
       event = "neo_tree_buffer_enter",
       handler = function()
-        vim.opt_local.relativenumber = true
         vim.opt_local.statusline = " "
       end,
     },
@@ -120,9 +119,8 @@ end, { noremap = true, silent = true })
 
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
-    if vim.fn.argc() == 1 and vim.fn.isdirectory(vim.fn.argv(0)) == 1 then
-      return
+    if vim.fn.argc() == 0 then
+      vim.cmd("Neotree show")
     end
-    vim.cmd("Neotree show")
   end,
 })
