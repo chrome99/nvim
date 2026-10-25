@@ -8,6 +8,7 @@ require("telescope").load_extension("projects")
 
 -- Session management
 require("auto-session").setup({
+	enabled = false,
 	log_level = "error",
 	auto_session_suppress_dirs = {},
 })
