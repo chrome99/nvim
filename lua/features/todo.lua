@@ -11,6 +11,7 @@ local AERIAL_WIDTH = 35
 
 local todo_file = vim.fn.stdpath("state") .. "/todo.md"
 local lock_file = vim.fn.stdpath("state") .. "/todo.lock"
+local folds_file = vim.fn.stdpath("state") .. "/todo_folds.json"
 local backup_dir = vim.fn.stdpath("state") .. "/todo_backups/"
 local load_todo_file  -- forward declaration
 local backup_file = backup_dir .. "todo_" .. os.date("%Y-%m-%d") .. ".md"
@@ -172,6 +173,34 @@ local function save_todo_file(buf)
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   vim.fn.writefile(lines, todo_file)
   vim.api.nvim_buf_set_option(buf, "modified", false)
+end
+
+local function save_folds(win)
+  local closed = vim.api.nvim_win_call(win, function()
+    local lnums = {}
+    for lnum = 1, vim.fn.line("$") do
+      if vim.fn.foldclosed(lnum) == lnum then
+        table.insert(lnums, lnum)
+        vim.cmd(lnum .. "foldopen")
+      end
+    end
+    return lnums
+  end)
+  vim.fn.writefile({ vim.json.encode(closed) }, folds_file)
+end
+
+local function restore_folds(win)
+  if vim.fn.filereadable(folds_file) == 0 then return end
+  local closed = vim.json.decode(vim.fn.readfile(folds_file)[1])
+  vim.api.nvim_win_call(win, function()
+    vim.cmd("normal! zR")
+    local last = vim.fn.line("$")
+    for i = #closed, 1, -1 do
+      if closed[i] <= last then
+        pcall(vim.cmd, closed[i] .. "foldclose")
+      end
+    end
+  end)
 end
 
 local checkbox = require("features.checkbox")
@@ -382,7 +411,17 @@ local function toggle_todo()
 
     state.floating = create_floating_window()
     load_todo_file(state.floating.buf)
+    restore_folds(state.floating.win)
     setup_todo_keymaps(state.floating.buf)
+
+    local win = state.floating.win
+    vim.api.nvim_create_autocmd("WinClosed", {
+      pattern = tostring(win),
+      once = true,
+      callback = function()
+        save_folds(win)
+      end,
+    })
 
     vim.api.nvim_create_autocmd({ "BufWriteCmd", "BufLeave", "WinClosed" }, {
       buffer = state.floating.buf,
